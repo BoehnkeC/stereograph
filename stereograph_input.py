@@ -38,8 +38,6 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         ## ---------------------------------------------------------
         ## signals & slots
         ## ---------------------------------------------------------
-        #for cmb_type, cmb_format in zip(self.cmbs_type, self.cmbs_format):
-        #    cmb_type.currentIndexChanged.connect(lambda: self.get_type(cmb_type, cmb_format))
 
     def clean_up_layers(self):
         layer_dict = {}
@@ -54,6 +52,10 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         ## set row count of input data table to length of QGIS layer TOC
         self.tbl_layers.setRowCount(len(self.layers.items()))
 
+        ## define empty list to store format comboboxes
+        ## dedicated combobox has to be cleared when clicking on the type combobox from the same row
+        cmbs_format = []
+
         ## insert layer into table
         for id, layer in enumerate(self.layers.items()):
             #field_names = [field.name() for field in layer[1].fields()]
@@ -66,38 +68,58 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
             ## get type field
             ## type announces the type of the structural record
-
-
-            #self.cmb_type.addItems(field_names)
-            self.cmbs_type = []
             cmb_type = QComboBox()
             cmb_type.addItems(['',
-                                    'Lines',
-                                    'Planes',
-                                    'Lines on Planes (Rake)',
-                                    'Small Circles',
-                                    'Arcs'])
-
+                            'Lines',
+                            'Planes',
+                            'Lines on Planes (Rake)',
+                            'Small Circles',
+                            'Arcs'])
+            cmb_type.setProperty('row', id)
             self.tbl_layers.setCellWidget(id, 1, cmb_type)
-            self.cmbs_type.append(cmb_type)
 
             ## map user cutsom type to required format
-            self.cmbs_format = []
             cmb_format = QComboBox()
             cmb_format.addItem('Please select dataset type')
             self.tbl_layers.setCellWidget(id, 2, cmb_format)
-            self.cmbs_format.append(cmb_format)
 
-            cmb_type.currentIndexChanged.connect(lambda: self.get_type(cmb_type, cmb_format))
+            ## append the combobox to the combobox table
+            cmbs_format.append(cmb_format)
 
-    def get_type(self, cmb_type, cmb_format):
+            ## entry in the combobox clicked
+            ## map to the structure type
+            ## hand the list of comboboxes to work on the combobox from the current row
+            cmb_type.currentIndexChanged.connect(lambda: self.slot_type(cmbs_format))
+
+    def slot_type(self, cmbs_format):
+        '''Process a click on the structure type combobox.
+        '''
+        ## get combobox triggering the signal
+        ## get the row of the table where the combobox was clicked
+        cmb_type = self.sender()
+        row = cmb_type.property('row')
+
+        ## get clicked index from combobox
+        index = cmb_type.currentIndex()
+
+        ## clear format combobox and overwrite
+        cmbs_format[row].clear()
+
+        ## map custom structure type of record to required format
+        self.get_format(cmb_type, cmbs_format[row])
+
+    def get_format(self, cmb_type, cmb_format):
         '''Map custom structure type of record to required format.
         '''
-        ## get current structure type
-        ## clear format combobox and overwrite
-        dataset_type = cmb_type.currentText()
-        print(dataset_type)
-        cmb_format.clear()
-
         format_lines = ['TP', 'PT', 'PQ', 'LL', 'RK']
         format_planes = ['AD', 'AZ', 'QD', 'DD']
+
+        ## get current structure type
+        dataset_type = cmb_type.currentText()
+
+        if dataset_type == 'Lines':
+            cmb_format.addItems(format_lines)
+        elif dataset_type == 'Planes':
+            cmb_format.addItems(format_planes)
+        else:
+            cmb_format.addItem('Please select dataset type')
