@@ -64,6 +64,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ## ---------------------------------------------------------
         ## define crucial instances
         ## ---------------------------------------------------------
+
+        self.layer_dict = {}
         self.header_dict = {
             'TP':['Trend', 'Plunge'], 'PT':['Plunge', 'Trend'],
             'PQ':['Plunge', 'Trend Quadrant'],
@@ -81,5 +83,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def open_dataset_dialog(self):
         '''Open a separate window to load data from disk or to create new dataset from scratch.
         '''
-        self.dlg_input = StereoGraphInputWidget()
-        self.dlg_input.exec_()
+        dlg_input = StereoGraphInputWidget()
+        dlg_input.exec_()
+
+        self.layer_dict = dlg_input.layers
