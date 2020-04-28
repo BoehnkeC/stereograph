@@ -13,7 +13,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, layers, parent=None):
         """Constructor."""
         super(StereoGraphInputWidget, self).__init__(parent)
         # Set up the user interface from Designer.
@@ -52,9 +52,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
                                 }
         }
 
-        ## clean up layer list
-        ## only keep vector layers
-        self.layers = self.clean_up_layers()
+        self.layers = layers
 
         ## define empty list to store format comboboxes
         ## dedicated combobox has to be cleared when clicking on the type combobox from the same row
@@ -66,6 +64,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         self.insert_layers()
         self.fill_comboboxes()
 
+        ## set width of format field selection to width of 1st table column
         self.txt_layers.setFixedWidth(self.tbl_layers.columnWidth(0))
 
         for j in range(len(self.cmbs_type)):
@@ -87,9 +86,9 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
         ## loop over layers
         ## find layer matching the current row
-        for layer_id in self.layers.keys():
-            if self.tbl_layers.currentRow() == layer_id:
-                self.layers[layer_id]['properties']['index_field_0'] = self.cmb_field_0.currentIndex()
+        for key in self.layers.keys():
+            if self.tbl_layers.currentRow() == self.layers[key]['properties']['row']:
+                self.layers[key]['properties']['index_field_0'] = self.cmb_field_0.currentIndex()
 
     def cmb_field_1_slot(self):
         '''
@@ -98,9 +97,9 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
         ## loop over layers
         ## find layer matching the current row
-        for layer_id in self.layers.keys():
-            if self.tbl_layers.currentRow() == layer_id:
-                self.layers[layer_id]['properties']['index_field_1'] = self.cmb_field_1.currentIndex()
+        for key in self.layers.keys():
+            if self.tbl_layers.currentRow() == self.layers[key]['properties']['row']:
+                self.layers[key]['properties']['index_field_1'] = self.cmb_field_1.currentIndex()
 
     def txt_layer_slot(self, row, column):
         '''
@@ -119,22 +118,22 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
             ## fill format fields with information from dictionary
             ## loop over layer dictionary keys
-            for id in self.layers.keys():
+            for key in self.layers.keys():
                 ## check if row of layer equals clicked table row
-                if id == row:
+                if self.layers[key]['properties']['row'] == row:
                     ## get indices in field comboboxes from dictionary
                     ## indices must be retrieved before resupplying the comboboxes with the field names
                     ## otherwise the index would change again and the default index of 0 would be written to the dictionary
-                    index_field_0 = self.layers[id]['properties']['index_field_0']
-                    index_field_1 = self.layers[id]['properties']['index_field_1']
+                    index_field_0 = self.layers[key]['properties']['index_field_0']
+                    index_field_1 = self.layers[key]['properties']['index_field_1']
 
                     ## get the current layer and its field names
-                    layer = self.layers[id]['layer']
-                    field_names = [field.name() for field in layer[1].fields()]
+                    layer = QgsProject.instance().mapLayers()[key]
+                    field_names = [field.name() for field in layer.fields()]
 
                     ## get type and format indices of current layer from dictionary
-                    index_type = self.layers[id]['properties']['index_type']
-                    index_format = self.layers[id]['properties']['index_format']
+                    index_type = self.layers[key]['properties']['index_type']
+                    index_format = self.layers[key]['properties']['index_format']
 
                     ## set format and field comboboxes to current indices
                     ## retrieve type and format text
@@ -177,11 +176,9 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
         ## get current layer
         ## get field names from current layer
-        layer = cmb_format.property('layer')
-        field_names = [field.name() for field in layer[1].fields()]
-
-        ## get row of corresponding layer
-        row = cmb_type.property('row')
+        key = cmb_format.property('layer_id')
+        layer = QgsProject.instance().mapLayers()[key]
+        field_names = [field.name() for field in layer.fields()]
 
         ## proceed to fill lower GUI labels if a valid dataset type has been selected
         ## check if the current text is a key in the format dictionary
@@ -198,7 +195,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
                 ## no selection, no label
                 ## write index = 0 to the layer dictionary
-                self.layers[row]['properties']['index_format'] = 0
+                self.layers[key]['properties']['index_format'] = 0
 
             ## valid selection on the type combobox has been made
             ## hand the corresponding format sub dictionary
@@ -209,13 +206,13 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
                 self.fill_field_comboboxes(field_names)
 
                 ## write the index from the format combobox to the layer dictionary
-                self.layers[row]['properties']['index_format'] = index
+                self.layers[key]['properties']['index_format'] = index
 
                 ## write format entry to layer dictionary
                 ## convert the keys of the format dictionary keys into a list
                 ## get the proper key at the specified index
-                self.layers[row]['properties']['field_0'] = format_dict[list(format_dict.keys())[index]][0]
-                self.layers[row]['properties']['field_1'] = format_dict[list(format_dict.keys())[index]][1]
+                self.layers[key]['properties']['field_0'] = format_dict[list(format_dict.keys())[index]][0]
+                self.layers[key]['properties']['field_1'] = format_dict[list(format_dict.keys())[index]][1]
 
     def cmb_type_slot(self, index):
         '''
@@ -233,10 +230,9 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         ## get row of corresponding layer
         row = cmb_type.property('row')
 
-        ## get corresponding layer, which is a tuple of layer ID and type
+        ## get corresponding layer by its layer ID
         ## write row of corresponding layer to layer dictionary
-        layer = cmb_type.property('layer')
-        #self.layers[layer[0]]['row'] = cmb_type.property('row')
+        key = cmb_type.property('layer_id')
 
         ## if a valid selection on the type combobox has been made, fill the format combobox
         ## check if the current text is a key in the format dictionary
@@ -251,18 +247,16 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             cmb_format.addItems(list(format_dict.keys()))
 
             ## write layer name to format field selection
-            self.txt_layers.setText(layer[1].name())
-            #self.txt_layers.setDocumentTitle(layer[0])
-            #print('Title: ', self.txt_layers.documentTitle())
+            self.txt_layers.setText(self.layers[key]['name'])
 
             ## write the index from the type combobox to the layer dictionary
-            self.layers[row]['properties']['index_type'] = index
+            self.layers[key]['properties']['index_type'] = index
 
             ## write format entry to layer dictionary
             ## convert the keys of the format dictionary keys into a list
             ## get the proper key at the specified index
-            self.layers[row]['properties']['field_0'] = format_dict[list(format_dict.keys())[index]][0]
-            self.layers[row]['properties']['field_1'] = format_dict[list(format_dict.keys())[index]][1]
+            self.layers[key]['properties']['field_0'] = format_dict[list(format_dict.keys())[index]][0]
+            self.layers[key]['properties']['field_1'] = format_dict[list(format_dict.keys())[index]][1]
 
         ## no valid selection on the type combobox
         ## fill the format combobox with a dummy text
@@ -271,7 +265,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
             ## no selection, no index
             ## write index = 0 to the layer dictionary
-            self.layers[row]['properties']['index_type'] = 0
+            self.layers[key]['properties']['index_type'] = 0
 
     def fill_comboboxes(self):
         '''
@@ -293,34 +287,6 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             self.layers[key]['properties']['index_type'] = 0
             self.layers[key]['properties']['index_format'] = 0
 
-    def clean_up_layers(self):
-        '''Available layers can be any type of allowed QGIS layer, e.g. vector, raster, WMS etc.
-        Only accept vector layers.
-
-        :returns layer_dict: Dictionary comprising crucial information about layers, e.g. layer name, structure type & format.
-        '''
-
-        layer_dict = {}
-
-        ## loop over layers
-        for id, layer in enumerate(QgsProject.instance().mapLayers().items()):
-            ## layer is a tuple with layer ID and type, e.g. ('<name>_ID', <QgsMapLayer: '<name>' (ogr)>)
-            ## only keep vector layers
-            if layer[1].type() == QgsMapLayerType.VectorLayer:
-                layer_dict[id] = {
-                            'layer':layer,
-                            'properties':{
-                                'index_type':0,
-                                'index_format':0,
-                                'field_0':None,
-                                'field_1':None,
-                                'index_field_0':0,
-                                'index_field_1':0
-                            }
-                }
-
-        return layer_dict
-
     def insert_layers(self):
         '''
         Insert all accepted vector layers from the QGIS layer TOC into the table.
@@ -330,13 +296,13 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         self.tbl_layers.setRowCount(len(self.layers.items()))
 
         ## insert layer into table
-        for id, items in enumerate(self.layers.items()):
-            layer = items[1]['layer']
+        for index, key in enumerate(self.layers.keys()):
+            layer = self.layers[key]
 
             ## get layer name
             ## 1st table column equals layer name
-            layer_input = QTableWidgetItem(layer[1].name())
-            self.tbl_layers.setItem(id, 0, layer_input)
+            layer_input = QTableWidgetItem(layer['name'])
+            self.tbl_layers.setItem(index, 0, layer_input)
 
             ## get type field
             ## add structure type to type combobox
@@ -344,17 +310,19 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             cmb_type = QComboBox()
 
             ## set the row of the table where the combobox was clicked
+            ## write row to layer dictionary
             ## add type combobox to table
-            cmb_type.setProperty('row', id)
-            self.tbl_layers.setCellWidget(id, 1, cmb_type)
+            cmb_type.setProperty('row', index)
+            self.layers[key]['properties']['row'] = index
+            self.tbl_layers.setCellWidget(index, 1, cmb_type)
 
             ## add format combobox to table
             cmb_format = QComboBox()
-            self.tbl_layers.setCellWidget(id, 2, cmb_format)
+            self.tbl_layers.setCellWidget(index, 2, cmb_format)
 
             cmb_type.setProperty('format', cmb_format)
-            cmb_type.setProperty('layer', items[1]['layer'])
-            cmb_format.setProperty('layer', items[1]['layer'])
+            cmb_type.setProperty('layer_id', key)
+            cmb_format.setProperty('layer_id', key)
             cmb_format.setProperty('type', cmb_type)
 
             ## append the combobox to the combobox table

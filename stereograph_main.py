@@ -23,9 +23,11 @@
 """
 
 import os
+import uuid
 
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.core import QgsProject, QgsMapLayerType
 
 ## import remaining GUIs
 from .stereograph_input import StereoGraphInputWidget
@@ -38,7 +40,6 @@ except ImportError:
     print('Could not import {}'.format('APSG module'))
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    #os.path.dirname(__file__), 'stereograph_dockwidget_base.ui'))
     os.path.dirname(__file__), 'stereograph_gui.ui'))
 
 
@@ -66,24 +67,88 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ## ---------------------------------------------------------
 
         self.layer_dict = {}
-        self.header_dict = {
-            'TP':['Trend', 'Plunge'], 'PT':['Plunge', 'Trend'],
-            'PQ':['Plunge', 'Trend Quadrant'],
-            'LL':['Latitude', 'Longitude'],
-            'RK':['unspecified', 'unspecified'],
-            'AD':['Strike Azimuth', 'Dip Magnitude'],
-            'AZ':['unspecified', 'unspecified'],
-            'QD':['Quadrant', 'unspecified'],
-            'DD':['Dip Magnitude', 'Dip Azimuth']}
+
+        self.survey_layers()
+
+    def layers_added(self, layers):
+        '''
+        Process the signal of added layers.
+
+        :param layers: List of added layers.
+        '''
+
+        for layer in layers:
+            self.process_layer_dict(layer)
+
+    def layer_removed(self, layer_id):
+        '''Process the signal of removed layers.
+
+        :param layer_ids: A removed layer IDs.
+        '''
+
+        def remove_key(layer_dict, key):
+            copy = dict(layer_dict)
+            del copy[key]
+
+            return copy
+
+        self.layer_dict = remove_key(self.layer_dict, layer_id)
+
+    def check_layer_type(self, layer):
+        '''
+        Check the layer type. Only accept vector layers.
+
+        :param layer: QGIS layer to be checked, as tuple.
+
+        :returns layer: QGIS layer if vector layer.
+        '''
+
+        ## layer is a tuple, e.g. ('lines_dfb84f76_7835_4663_8da0_d43d8c1620f7', <QgsMapLayer: 'lines' (ogr)>)
+        if layer[1].type() == QgsMapLayerType.VectorLayer:
+            return layer[1]
+
+    def survey_layers(self):
+        for layer in QgsProject.instance().mapLayers().items():
+            vlayer = self.check_layer_type(layer)
+            self.process_layer_dict(vlayer)
+
+        QgsProject.instance().layersAdded.connect(self.layers_added)
+        QgsProject.instance().layerRemoved.connect(self.layer_removed)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
 
+    def process_layer_dict(self, layer):
+        '''
+        Build a dictionary with information of all valid vector layers in use.
+
+        :param layer: QGIS vector layer.
+        '''
+
+        ## layer ID is used as key
+        ## layer ID is unique for the current QGIS session
+        ## NOTE: If computing on reloaded layers in the plugin, exchange layer IDs in that dictionary with the renewed QGIS layer ID from the TOC
+        ## incorporate layer itslef in the dictionary to get a pointer to the field names in later stages
+
+        self.layer_dict[layer.id()] = {
+                    'name':layer.name(),
+                    'properties':{
+                        'row':None,
+                        'index_type':0,
+                        'index_format':0,
+                        'field_0':None,
+                        'field_1':None,
+                        'index_field_0':0,
+                        'index_field_1':0
+                    }
+        }
+
     def open_dataset_dialog(self):
         '''Open a separate window to load data from disk or to create new dataset from scratch.
         '''
-        dlg_input = StereoGraphInputWidget()
+        dlg_input = StereoGraphInputWidget(self.layer_dict)
+        dlg_input.show()
         dlg_input.exec_()
 
         self.layer_dict = dlg_input.layers
