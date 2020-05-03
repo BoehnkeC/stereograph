@@ -23,6 +23,7 @@
 """
 
 import os
+import sys
 
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
@@ -34,9 +35,11 @@ from .stereograph_input import StereoGraphInputWidget
 
 # APSG library by Ondro Lexa: https://github.com/ondrolexa/apsg
 try:
-    from apsg import StereoNet
+    import apsg
 except ImportError:
-    print("Could not import {}".format("APSG module"))
+    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg-0.6.4-py2.py3-none-any.whl')
+    sys.path.append(mod_path)
+    import apsg
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "stereograph_gui.ui")
