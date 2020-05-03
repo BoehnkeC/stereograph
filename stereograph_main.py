@@ -23,28 +23,27 @@
 """
 
 import os
-import uuid
 
-from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsProject, QgsMapLayerType
 
-## import remaining GUIs
 from .stereograph_input import StereoGraphInputWidget
-#from stereograph_plot_settings import StereoGraphPltSettingsWidget
 
-## APSG library by Ondro Lexa: https://github.com/ondrolexa/apsg
+# from stereograph_plot_settings import StereoGraphPltSettingsWidget
+
+# APSG library by Ondro Lexa: https://github.com/ondrolexa/apsg
 try:
     from apsg import StereoNet
 except ImportError:
-    print('Could not import {}'.format('APSG module'))
+    print("Could not import {}".format("APSG module"))
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'stereograph_gui.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "stereograph_gui.ui")
+)
 
 
 class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
-
     closingPlugin = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -57,34 +56,27 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        ## ---------------------------------------------------------
-        ## connect buttons
-        ## ---------------------------------------------------------
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
-
-        ## ---------------------------------------------------------
-        ## define crucial instances
-        ## ---------------------------------------------------------
 
         self.layer_dict = {}
 
         self.survey_layers()
 
     def layers_added(self, layers):
-        '''
+        """
         Process the signal of added layers.
 
         :param layers: List of added layers.
-        '''
+        """
 
         for layer in layers:
             self.process_layer_dict(layer)
 
     def layer_removed(self, layer_id):
-        '''Process the signal of removed layers.
+        """Process the signal of removed layers.
 
-        :param layer_ids: A removed layer IDs.
-        '''
+        :param layer_id: A removed layer ID.
+        """
 
         def remove_key(layer_dict, key):
             copy = dict(layer_dict)
@@ -94,16 +86,17 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.layer_dict = remove_key(self.layer_dict, layer_id)
 
-    def check_layer_type(self, layer):
-        '''
+    @staticmethod
+    def check_layer_type(layer):
+        """
         Check the layer type. Only accept vector layers.
 
         :param layer: QGIS layer to be checked, as tuple.
 
         :returns layer: QGIS layer if vector layer.
-        '''
+        """
 
-        ## layer is a tuple, e.g. ('lines_dfb84f76_7835_4663_8da0_d43d8c1620f7', <QgsMapLayer: 'lines' (ogr)>)
+        # layer is a tuple, e.g. ('lines_dfb84f76_7835_4663_8da0_d43d8c1620f7', <QgsMapLayer: 'lines' (ogr)>)
         if layer[1].type() == QgsMapLayerType.VectorLayer:
             return layer[1]
 
@@ -120,33 +113,34 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         event.accept()
 
     def process_layer_dict(self, layer):
-        '''
+        """
         Build a dictionary with information of all valid vector layers in use.
 
         :param layer: QGIS vector layer.
-        '''
+        """
 
-        ## layer ID is used as key
-        ## layer ID is unique for the current QGIS session
-        ## NOTE: If computing on reloaded layers in the plugin, exchange layer IDs in that dictionary with the renewed QGIS layer ID from the TOC
-        ## incorporate layer itslef in the dictionary to get a pointer to the field names in later stages
+        # layer ID is used as key
+        # layer ID is unique for the current QGIS session
+        # NOTE: If computing on reloaded layers in the plugin,
+        # exchange layer IDs in that dictionary with the renewed QGIS layer ID from the TOC
+        # incorporate layer itslef in the dictionary to get a pointer to the field names in later stages
 
         self.layer_dict[layer.id()] = {
-                    'name':layer.name(),
-                    'properties':{
-                        'row':None,
-                        'index_type':0,
-                        'index_format':0,
-                        'field_0':None,
-                        'field_1':None,
-                        'index_field_0':0,
-                        'index_field_1':0
-                    }
+            "name": layer.name(),
+            "properties": {
+                "row": None,
+                "index_type": 0,
+                "index_format": 0,
+                "field_0": None,
+                "field_1": None,
+                "index_field_0": 0,
+                "index_field_1": 0,
+            },
         }
 
     def open_dataset_dialog(self):
-        '''Open a separate window to load data from disk or to create new dataset from scratch.
-        '''
+        """Open a separate window to load data from disk or to create new dataset from scratch.
+        """
         dlg_input = StereoGraphInputWidget(self.layer_dict)
         dlg_input.show()
         dlg_input.exec_()
