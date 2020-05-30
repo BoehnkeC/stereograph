@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/plugins/stereograph" >
-        <file>icon.png</file>
+        <file>icons/main.png</file>,
+        <file>icons/remove.png</file>
     </qresource>
 </RCC>
