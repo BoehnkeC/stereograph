@@ -41,6 +41,9 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         }
 
         self.layers = layers
+        self.default_labels = {
+            "key": (self.lbl_format_0.text(), self.lbl_format_1.text())
+        }
 
         # define empty list to store format comboboxes
         # dedicated combobox has to be cleared when clicking on the type combobox from the same row
@@ -168,9 +171,6 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         cmb_type = cmb_format.property("type")
         dataset_type = cmb_type.currentText()
 
-        if len(cmb_type.currentText()) > 0:
-            format_dict = self.format_entries[dataset_type.lower()]
-
         # get current layer
         # get field names from current layer
         key = cmb_format.property("layer_id")
@@ -200,6 +200,8 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             # hand the corresponding format sub dictionary
             # hand the current text of the format combobox, depicting the key in the format sub-dictionary
             else:
+                format_dict = self.format_entries[dataset_type.lower()]
+
                 # write the index from the format combobox to the layer dictionary
                 self.label_format_fields(
                     self.format_entries[dataset_type.lower()],
@@ -259,10 +261,10 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             # convert the keys of the format dictionary keys into a list
             # get the proper key at the specified index
             self.layers[key]["properties"]["field_0"] = format_dict[
-                list(format_dict.keys())[index]
+                list(format_dict.keys())[index-1]
             ][0]
             self.layers[key]["properties"]["field_1"] = format_dict[
-                list(format_dict.keys())[index]
+                list(format_dict.keys())[index-1]
             ][1]
 
         # no valid selection on the type combobox
@@ -273,6 +275,13 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             # no selection, no index
             # write index = 0 to the layer dictionary
             self.layers[key]["properties"]["index_type"] = 0
+
+            self.label_format_fields(
+                self.default_labels
+            )
+
+            self.layers[key]["properties"]["field_1"] = None
+            self.layers[key]["properties"]["field_2"] = None
 
     def fill_comboboxes(self):
         """
