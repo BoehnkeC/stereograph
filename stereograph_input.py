@@ -2,7 +2,7 @@ import os
 
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal, QSignalMapper
-from PyQt5.QtWidgets import QTableWidgetItem, QComboBox, QWidget, QPushButton
+from PyQt5.QtWidgets import QTableWidgetItem, QComboBox
 from PyQt5.QtGui import QIcon
 from qgis.core import QgsProject, QgsMapLayerType
 
@@ -317,11 +317,6 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
         # insert layer into table
         for index, key in enumerate(self.layers.keys()):
-
-            btn_rem = QPushButton()
-            btn_rem.setIcon(QIcon(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icons', 'remove.png')))
-            self.tbl_layers.setCellWidget(index, 3, btn_rem)
-            
             layer = self.layers[key]
 
             # get layer name
