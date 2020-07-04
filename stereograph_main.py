@@ -26,8 +26,11 @@ import os
 import sys
 
 from qgis.PyQt import QtWidgets, uic
+from PyQt5.QtWidgets import QTableWidgetItem
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsProject, QgsMapLayerType
+
+from copy import deepcopy
 
 from .stereograph_input import StereoGraphInputWidget
 
@@ -59,9 +62,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        self.btn_add_set.clicked.connect(self.open_dataset_dialog)
-
         self.layer_dict = {}
+
+        self.btn_add_set.clicked.connect(self.open_dataset_dialog)
 
         self.survey_layers()
 
@@ -133,7 +136,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             "properties": {
                 "row": None,
                 "index_type": 0,
+                "type": None,
                 "index_format": 0,
+                "format": None,
                 "field_0": None,
                 "field_1": None,
                 "index_field_0": 0,
@@ -144,8 +149,23 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def open_dataset_dialog(self):
         """Open a separate window to load data from disk or to create new dataset from scratch.
         """
+
         dlg_input = StereoGraphInputWidget(self.layer_dict)
         dlg_input.show()
         dlg_input.exec_()
 
         self.layer_dict = dlg_input.layers
+
+        self.insert_layers(dlg_input.tbl_layers)
+
+    def insert_layers(self, input_table):
+        self.tbl_sets.setRowCount(input_table.rowCount())
+
+        for row in range(input_table.rowCount()):
+            dlg_layer = QTableWidgetItem(input_table.item(row, 0).text())
+            dlg_type = QTableWidgetItem(input_table.cellWidget(row, 1).currentText())
+            dlg_format = QTableWidgetItem(input_table.cellWidget(row, 2).currentText())
+
+            self.tbl_sets.setItem(row, 0, dlg_layer)
+            self.tbl_sets.setItem(row, 1, dlg_type)
+            self.tbl_sets.setItem(row, 2, dlg_format)
