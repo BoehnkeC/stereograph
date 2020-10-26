@@ -38,7 +38,7 @@
       <item>
        <widget class="QTabWidget" name="tbl_set">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_sets">
          <attribute name="title">
@@ -98,9 +98,6 @@
           <string>Input data</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="1" column="0">
-           <widget class="QTableView" name="tbl_input"/>
-          </item>
           <item row="2" column="0">
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
@@ -139,6 +136,28 @@
              <widget class="QComboBox" name="cmb_set"/>
             </item>
            </layout>
+          </item>
+          <item row="1" column="0">
+           <widget class="QTableWidget" name="tbl_input">
+            <property name="columnCount">
+             <number>3</number>
+            </property>
+            <column>
+             <property name="text">
+              <string/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string/>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string/>
+             </property>
+            </column>
+           </widget>
           </item>
          </layout>
         </widget>

@@ -28,7 +28,7 @@ import sys
 from qgis.PyQt import QtWidgets, uic
 from PyQt5.QtWidgets import QTableWidgetItem
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsProject, QgsMapLayerType
+from qgis.core import QgsProject, QgsMapLayerType,QgsFeatureRequest
 
 from copy import deepcopy
 
@@ -182,9 +182,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.cmb_set.addItems([layer.name() for layer in self.layers])
 
         # get layer from the combobox
-        layer = self.cmb_set.currentIndex()
-        fc = self.layers[layer].featureCount()  # get feature count of layer
+        index = self.cmb_set.currentIndex()
+        fc = self.layers[index].featureCount()  # get feature count of layer
+        field_0 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]]
+        field_1 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]]
+
+        self.tbl_input.setHorizontalHeaderLabels(["ID", field_0, field_1])
 
         for i in range(0, fc):
-            feat = self.layers[layer].getFeature(i)
-
+            feat = self.layers[index].getFeature(i)
+            #print(feat.attributes())
