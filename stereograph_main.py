@@ -63,6 +63,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.setupUi(self)
 
         self.layer_dict = {}
+        self.layers = None
 
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
 
@@ -131,8 +132,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # exchange layer IDs in that dictionary with the renewed QGIS layer ID from the TOC
         # incorporate layer itslef in the dictionary to get a pointer to the field names in later stages
 
+        #self.layers.append(layer)
+
         self.layer_dict[layer.id()] = {
-            "name": layer.name(),
+            "layer": layer,
             "properties": {
                 "row": None,
                 "index_type": 0,
@@ -155,10 +158,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         dlg_input.exec_()
 
         self.layer_dict = dlg_input.layers
+        self.insert_datasets(dlg_input.tbl_layers)
+        self.insert_data(dlg_input.tbl_layers)
 
-        self.insert_layers(dlg_input.tbl_layers)
-
-    def insert_layers(self, input_table):
+    def insert_datasets(self, input_table):
         self.tbl_sets.setRowCount(input_table.rowCount())
 
         for row in range(input_table.rowCount()):
@@ -169,3 +172,19 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.tbl_sets.setItem(row, 0, dlg_layer)
             self.tbl_sets.setItem(row, 1, dlg_type)
             self.tbl_sets.setItem(row, 2, dlg_format)
+
+    def insert_data(self, input_table):
+        # get layers from layer dictionary
+        self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
+        print(self.layer_dict)
+        # write layer names to dataset combobox
+        self.cmb_set.clear()
+        self.cmb_set.addItems([layer.name() for layer in self.layers])
+
+        # get layer from the combobox
+        layer = self.cmb_set.currentIndex()
+        fc = self.layers[layer].featureCount()  # get feature count of layer
+
+        for i in range(0, fc):
+            feat = self.layers[layer].getFeature(i)
+

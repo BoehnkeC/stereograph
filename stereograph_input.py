@@ -270,7 +270,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             cmb_format.addItems(list(format_dict.keys()))
 
             # write layer name to format field selection
-            self.txt_layers.setText(self.layers[key]["name"])
+            self.txt_layers.setText(self.layers[key]["layer"].name())
 
             # write the index from the type combobox to the layer dictionary
             self.layers[key]["properties"]["index_type"] = index
@@ -347,7 +347,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
             # get layer name
             # 1st table column equals layer name
-            layer_input = QTableWidgetItem(layer["name"])
+            layer_input = QTableWidgetItem(layer["layer"].name())
             self.tbl_layers.setItem(index, 0, layer_input)
 
             # get type field
