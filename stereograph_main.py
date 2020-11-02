@@ -176,19 +176,39 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def insert_data(self, input_table):
         # get layers from layer dictionary
         self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
-        print(self.layer_dict)
+
         # write layer names to dataset combobox
         self.cmb_set.clear()
         self.cmb_set.addItems([layer.name() for layer in self.layers])
 
         # get layer from the combobox
         index = self.cmb_set.currentIndex()
-        fc = self.layers[index].featureCount()  # get feature count of layer
         field_0 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]]
         field_1 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]]
 
+        # set header of input table
         self.tbl_input.setHorizontalHeaderLabels(["ID", field_0, field_1])
 
-        for i in range(0, fc):
-            feat = self.layers[index].getFeature(i)
-            #print(feat.attributes())
+        # set row count of input data table to length of selected layer
+        self.tbl_input.setRowCount(len(self.layers[index]))
+
+        for row in range(self.tbl_input.rowCount()):
+            feature = self.layers[index].getFeature(row)
+
+            # set id
+            if feature.attributes()[0]:
+                id = feature.attributes()[0]
+
+            else:
+                id = feature.id()
+
+            col_0 = QTableWidgetItem(id)
+            self.tbl_input.setItem(row, 0, col_0)
+
+            # set first column
+            col_1 = QTableWidgetItem(feature.attributes()[1])
+            self.tbl_input.setItem(row, 1, col_1)
+
+            # set second column
+            col_2 = QTableWidgetItem(feature.attributes()[2])
+            self.tbl_input.setItem(row, 2, col_2)
