@@ -158,8 +158,17 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         dlg_input.exec_()
 
         self.layer_dict = dlg_input.layers
+        #self.tbl_layers = dlg_input.tbl_layers
+
+        # get layers from layer dictionary
+        self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
+
+        self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
+
         self.insert_datasets(dlg_input.tbl_layers)
-        self.insert_data(dlg_input.tbl_layers)
+        self.fill_dataset_combobox()
+
+
 
     def insert_datasets(self, input_table):
         self.tbl_sets.setRowCount(input_table.rowCount())
@@ -173,14 +182,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.tbl_sets.setItem(row, 1, dlg_type)
             self.tbl_sets.setItem(row, 2, dlg_format)
 
-    def insert_data(self, input_table):
-        # get layers from layer dictionary
-        self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
-
+    def fill_dataset_combobox(self):
         # write layer names to dataset combobox
         self.cmb_set.clear()
         self.cmb_set.addItems([layer.name() for layer in self.layers])
 
+    def _build_dataset_table_header(self):
         # get layer from the combobox
         index = self.cmb_set.currentIndex()
         field_0 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]]
@@ -189,6 +196,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # set header of input table
         self.tbl_input.setHorizontalHeaderLabels(["ID", field_0, field_1])
 
+    def _insert_data(self):
+        # get layer from the combobox
+        index = self.cmb_set.currentIndex()
         # set row count of input data table to length of selected layer
         self.tbl_input.setRowCount(len(self.layers[index]))
 
@@ -203,12 +213,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 id = feature.id()
 
             col_0 = QTableWidgetItem(id)
-            self.tbl_input.setItem(row, 0, col_0)
-
-            # set first column
             col_1 = QTableWidgetItem(feature.attributes()[1])
-            self.tbl_input.setItem(row, 1, col_1)
-
-            # set second column
             col_2 = QTableWidgetItem(feature.attributes()[2])
+
+            self.tbl_input.setItem(row, 0, col_0)
+            self.tbl_input.setItem(row, 1, col_1)
             self.tbl_input.setItem(row, 2, col_2)
+
+    def insert_input_data(self):
+        self._build_dataset_table_header()
+        self._insert_data()
