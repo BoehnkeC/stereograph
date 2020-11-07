@@ -28,6 +28,7 @@ import sys
 from qgis.PyQt import QtWidgets, uic
 from PyQt5.QtWidgets import QTableWidgetItem
 from qgis.PyQt.QtCore import pyqtSignal
+from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType,QgsFeatureRequest
 
 from copy import deepcopy
@@ -168,8 +169,6 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.insert_datasets(dlg_input.tbl_layers)
         self.fill_dataset_combobox()
 
-
-
     def insert_datasets(self, input_table):
         self.tbl_sets.setRowCount(input_table.rowCount())
 
@@ -212,9 +211,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 id = feature.id()
 
-            col_0 = QTableWidgetItem(id)
-            col_1 = QTableWidgetItem(feature.attributes()[1])
-            col_2 = QTableWidgetItem(feature.attributes()[2])
+            col_0 = QTableWidgetItem()
+            col_1 = QTableWidgetItem()
+            col_2 = QTableWidgetItem()
+
+            col_0.setData(Qt.EditRole, id)
+            col_1.setData(Qt.EditRole, feature.attributes()[1])
+            col_2.setData(Qt.EditRole, feature.attributes()[2])
 
             self.tbl_input.setItem(row, 0, col_0)
             self.tbl_input.setItem(row, 1, col_1)
