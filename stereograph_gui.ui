@@ -38,7 +38,7 @@
       <item>
        <widget class="QTabWidget" name="tbl_set">
         <property name="currentIndex">
-         <number>1</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="tab_sets">
          <attribute name="title">
@@ -165,6 +165,17 @@
          <attribute name="title">
           <string>Plots</string>
          </attribute>
+         <widget class="QWidget" name="verticalLayoutWidget">
+          <property name="geometry">
+           <rect>
+            <x>-1</x>
+            <y>-1</y>
+            <width>341</width>
+            <height>481</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="plot_layout"/>
+         </widget>
         </widget>
        </widget>
       </item>

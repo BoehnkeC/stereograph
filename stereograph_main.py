@@ -39,11 +39,11 @@ from .stereograph_input import StereoGraphInputWidget
 
 # APSG library by Ondro Lexa: https://github.com/ondrolexa/apsg
 try:
-    import apsg
+    from apsg import *
 except ImportError:
     mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg-0.6.4-py2.py3-none-any.whl')
     sys.path.append(mod_path)
-    import apsg
+    from apsg import *
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "stereograph_gui.ui")
@@ -66,9 +66,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.layer_dict = {}
         self.layers = None
 
-        self.btn_add_set.clicked.connect(self.open_dataset_dialog)
-
         self.survey_layers()
+
+        self.btn_add_set.clicked.connect(self.open_dataset_dialog)
 
     def layers_added(self, layers):
         """
@@ -168,6 +168,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.insert_datasets(dlg_input.tbl_layers)
         self.fill_dataset_combobox()
+        self.create_plot()
 
     def insert_datasets(self, input_table):
         self.tbl_sets.setRowCount(input_table.rowCount())
@@ -226,3 +227,30 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def insert_input_data(self):
         self._build_dataset_table_header()
         self._insert_data()
+
+    """
+    def pick_from_plot(self, event):
+        this_item = event.artist
+        xdata = this_item.get_xdata()
+        ydata = this_item.get_ydata()
+        ind = event.ind
+
+        points = tuple(zip(xdata[ind], ydata[ind]))
+
+        #print('Points: ', points)
+        #print('X = ' + str(np.take(xdata, ind)[0]))
+        #print('Y = ' + str(np.take(ydata, ind)[0]))
+        print(self.stereonet.draw().contains(event))
+    """
+
+    def create_plot(self):
+        # add stereographic chart
+        #self.stereonet = StereoNet()
+        #self.plot_layout.addWidget(self.stereonet.fig.canvas)
+
+        print(self.tbl_input.item(0, 1).data(Qt.EditRole))
+        print("here")
+        #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
+        #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
+
+        #self.stereonet.draw()
