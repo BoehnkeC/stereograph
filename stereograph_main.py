@@ -154,11 +154,11 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """Open a separate window to load data from disk or to create new dataset from scratch.
         """
 
-        dlg_input = StereoGraphInputWidget(self.layer_dict)
-        dlg_input.show()
-        dlg_input.exec_()
+        self.dlg_input = StereoGraphInputWidget(self.layer_dict)
+        self.dlg_input.show()
+        self.dlg_input.exec_()
 
-        self.layer_dict = dlg_input.layers
+        self.layer_dict = self.dlg_input.layers
         #self.tbl_layers = dlg_input.tbl_layers
 
         # get layers from layer dictionary
@@ -166,11 +166,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
 
-        self.insert_datasets(dlg_input.tbl_layers)
-        self.fill_dataset_combobox()
+        self.insert_datasets(self.dlg_input.tbl_layers)
         self.create_plot()
 
     def insert_datasets(self, input_table):
+        """Fill dataset table"""
+
         self.tbl_sets.setRowCount(input_table.rowCount())
 
         for row in range(input_table.rowCount()):
@@ -182,7 +183,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.tbl_sets.setItem(row, 1, dlg_type)
             self.tbl_sets.setItem(row, 2, dlg_format)
 
-    def fill_dataset_combobox(self):
+        self._fill_dataset_combobox()
+
+    def _fill_dataset_combobox(self):
         # write layer names to dataset combobox
         self.cmb_set.clear()
         self.cmb_set.addItems([layer.name() for layer in self.layers])
@@ -190,6 +193,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _build_dataset_table_header(self):
         # get layer from the combobox
         index = self.cmb_set.currentIndex()
+
+        # self.layers[index].id() gives the QGIS-internal layer ID
         field_0 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]]
         field_1 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]]
 
@@ -250,6 +255,16 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         print(self.tbl_input.item(0, 1).data(Qt.EditRole))
         print("here")
+
+        index = self.cmb_set.currentIndex()
+
+        # get the dictionary of stereographic types
+        # get the index of the stereographic type
+        # get the current type
+        types = list(self.dlg_input.type_entries.values())
+        index_type = self.layer_dict[self.layers[index].id()]["properties"]["index_type"]
+        current_type = types[index_type]
+
         #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
         #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
 
