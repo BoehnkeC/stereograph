@@ -167,7 +167,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
 
         self.insert_datasets(self.dlg_input.tbl_layers)
-        self.create_plot()
+        #self.create_plot()
 
     def insert_datasets(self, input_table):
         """Fill dataset table"""
@@ -221,9 +221,11 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             col_1 = QTableWidgetItem()
             col_2 = QTableWidgetItem()
 
+            # self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"] refers to the field index of the vector file
+            # e.g. the field header of the feature has the index 2
             col_0.setData(Qt.EditRole, id)
-            col_1.setData(Qt.EditRole, feature.attributes()[1])
-            col_2.setData(Qt.EditRole, feature.attributes()[2])
+            col_1.setData(Qt.EditRole, feature.attributes()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]])
+            col_2.setData(Qt.EditRole, feature.attributes()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]])
 
             self.tbl_input.setItem(row, 0, col_0)
             self.tbl_input.setItem(row, 1, col_1)
@@ -250,11 +252,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def create_plot(self):
         # add stereographic chart
-        #self.stereonet = StereoNet()
-        #self.plot_layout.addWidget(self.stereonet.fig.canvas)
+        self.stereonet = StereoNet()
+        self.plot_layout.addWidget(self.stereonet.fig.canvas)
 
         print(self.tbl_input.item(0, 1).data(Qt.EditRole))
-        print("here")
 
         index = self.cmb_set.currentIndex()
 
@@ -265,7 +266,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         index_type = self.layer_dict[self.layers[index].id()]["properties"]["index_type"]
         current_type = types[index_type]
 
-        #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
+        #if current_type == "Planes":
+
+            #self.stereonet.plane(aFol(1, 2))
+            #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
         #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
 
         #self.stereonet.draw()
