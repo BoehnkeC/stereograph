@@ -164,10 +164,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # get layers from layer dictionary
         self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
 
-        self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
-
         self.insert_datasets(self.dlg_input.tbl_layers)
-        #self.create_plot()
+
+        self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
 
     def insert_datasets(self, input_table):
         """Fill dataset table"""
@@ -234,6 +233,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def insert_input_data(self):
         self._build_dataset_table_header()
         self._insert_data()
+        self.create_plot()
 
     """
     def pick_from_plot(self, event):
@@ -255,7 +255,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.stereonet = StereoNet()
         self.plot_layout.addWidget(self.stereonet.fig.canvas)
 
-        print(self.tbl_input.item(0, 1).data(Qt.EditRole))
+        #print(self.tbl_input.item(0, 1).data(Qt.EditRole))
 
         index = self.cmb_set.currentIndex()
 
@@ -266,10 +266,14 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         index_type = self.layer_dict[self.layers[index].id()]["properties"]["index_type"]
         current_type = types[index_type]
 
-        #if current_type == "Planes":
+        if current_type == "Planes":
+            for row in range(self.tbl_input.rowCount()):
+                x = self.tbl_input.item(row, 1).data(Qt.EditRole)
+                y = self.tbl_input.item(row, 2).data(Qt.EditRole)
 
+                self.stereonet.plane(Fol(x, y))
             #self.stereonet.plane(aFol(1, 2))
             #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
         #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
 
-        #self.stereonet.draw()
+        self.stereonet.draw()
