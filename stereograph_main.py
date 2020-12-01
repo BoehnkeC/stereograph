@@ -212,7 +212,6 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.dlg_input = StereoGraphInputWidget(self.layer_dict)
 
         if close:
-            print("close")
             self.dlg_input.close()
 
         else:
@@ -220,7 +219,6 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.dlg_input.exec_()
 
         self.layer_dict = self.dlg_input.layers
-        print(self.layer_dict)
         #self.tbl_layers = dlg_input.tbl_layers
 
         # get layers from layer dictionary
