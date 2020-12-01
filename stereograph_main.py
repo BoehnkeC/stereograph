@@ -24,12 +24,13 @@
 
 import os
 import sys
+from pathlib import Path
 
 from qgis.PyQt import QtWidgets, uic
 from PyQt5.QtWidgets import QTableWidgetItem
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
-from qgis.core import QgsProject, QgsMapLayerType,QgsFeatureRequest
+from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
 
 from copy import deepcopy
 
@@ -68,7 +69,61 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.survey_layers()
 
+        self.init_test()
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
+        self.btn_test.clicked.connect(self.test_case)
+
+    def init_test(self):
+        from qgis.core import QgsVectorLayer
+
+        lines_path = os.path.join(os.path.dirname(__file__), "test", "data", "structures", "lines.shp")
+        planes_path = os.path.join(os.path.dirname(__file__), "test", "data", "structures", "planes.shp")
+
+        self.lines_layer = QgsVectorLayer(lines_path, "Lines", "ogr")
+        self.planes_layer = QgsVectorLayer(planes_path, "Planes", "ogr")
+
+        if not self.lines_layer.isValid() and not self.planes_layer.isValid():
+            print("Layer failed to load!")
+
+        else:
+            QgsProject.instance().addMapLayer(self.lines_layer)
+            QgsProject.instance().addMapLayer(self.planes_layer)
+
+            self.btn_add_set.setCheckable(True)
+            self.btn_add_set.toggle()
+
+    def test_case(self):
+        self.layer_dict[self.lines_layer.id()] = {
+            "layer": self.lines_layer,
+            "properties": {
+                "row": 0,
+                "index_type": 1,
+                "type": None,
+                "index_format": 0,
+                "format": None,
+                "field_0": None,
+                "field_1": None,
+                "index_field_0": 2,
+                "index_field_1": 3,
+            },
+        }
+
+        self.layer_dict[self.planes_layer.id()] = {
+            "layer": self.planes_layer,
+            "properties": {
+                "row": 1,
+                "index_type": 2,
+                "type": None,
+                "index_format": 0,
+                "format": None,
+                "field_0": None,
+                "field_1": None,
+                "index_field_0": 2,
+                "index_field_1": 3,
+            },
+        }
+
+        self.open_dataset_dialog(close=True)
 
     def layers_added(self, layers):
         """
@@ -150,15 +205,22 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             },
         }
 
-    def open_dataset_dialog(self):
+    def open_dataset_dialog(self, close=False):
         """Open a separate window to load data from disk or to create new dataset from scratch.
         """
 
         self.dlg_input = StereoGraphInputWidget(self.layer_dict)
-        self.dlg_input.show()
-        self.dlg_input.exec_()
+
+        if close:
+            print("close")
+            self.dlg_input.close()
+
+        else:
+            self.dlg_input.show()
+            self.dlg_input.exec_()
 
         self.layer_dict = self.dlg_input.layers
+        print(self.layer_dict)
         #self.tbl_layers = dlg_input.tbl_layers
 
         # get layers from layer dictionary

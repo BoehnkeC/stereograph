@@ -38,7 +38,7 @@
       <item>
        <widget class="QTabWidget" name="tbl_set">
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="tab_sets">
          <attribute name="title">
@@ -71,6 +71,13 @@
               <string>Format</string>
              </property>
             </column>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_test">
+            <property name="text">
+             <string>Test</string>
+            </property>
            </widget>
           </item>
           <item>
