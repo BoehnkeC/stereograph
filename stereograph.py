@@ -185,7 +185,7 @@ class Stereograph:
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-
+        self.dockwidget.unload_test()
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
         # Commented next statement since it causes QGIS crashe
@@ -201,6 +201,7 @@ class Stereograph:
         #print "** UNLOAD Stereograph"
 
         for action in self.actions:
+            self.dockwidget.unload_test()
             self.iface.removePluginMenu(
                 self.tr(u'&Stereograph'),
                 action)

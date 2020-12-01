@@ -69,11 +69,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.survey_layers()
 
-        self.init_test()
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
         self.btn_test.clicked.connect(self.test_case)
 
-    def init_test(self):
+    def _load_test(self):
         from qgis.core import QgsVectorLayer
 
         lines_path = os.path.join(os.path.dirname(__file__), "test", "data", "structures", "lines.shp")
@@ -92,7 +91,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.btn_add_set.setCheckable(True)
             self.btn_add_set.toggle()
 
+    def unload_test(self):
+        QgsProject.instance().removeMapLayers([self.lines_layer.id(), self.planes_layer.id()])
+
     def test_case(self):
+        self._load_test()
+
         self.layer_dict[self.lines_layer.id()] = {
             "layer": self.lines_layer,
             "properties": {
