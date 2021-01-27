@@ -26,8 +26,8 @@ import os
 import sys
 from pathlib import Path
 
-from qgis.PyQt import QtWidgets, uic
-from PyQt5.QtWidgets import QTableWidgetItem
+from qgis.PyQt import uic
+from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
@@ -64,6 +64,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        self.build_collapsible()
+
         self.layer_dict = {}
         self.layers = None
 
@@ -91,8 +93,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.btn_add_set.setCheckable(True)
             self.btn_add_set.toggle()
 
+    """
     def unload_test(self):
         QgsProject.instance().removeMapLayers([self.lines_layer.id(), self.planes_layer.id()])
+    """
 
     def test_case(self):
         self._load_test()
@@ -238,9 +242,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tbl_sets.setRowCount(input_table.rowCount())
 
         for row in range(input_table.rowCount()):
-            dlg_layer = QTableWidgetItem(input_table.item(row, 0).text())
-            dlg_type = QTableWidgetItem(input_table.cellWidget(row, 1).currentText())
-            dlg_format = QTableWidgetItem(input_table.cellWidget(row, 2).currentText())
+            dlg_layer = QtWidgets.QTableWidgetItem(input_table.item(row, 0).text())
+            dlg_type = QtWidgets.QTableWidgetItem(input_table.cellWidget(row, 1).currentText())
+            dlg_format = QtWidgets.QTableWidgetItem(input_table.cellWidget(row, 2).currentText())
 
             self.tbl_sets.setItem(row, 0, dlg_layer)
             self.tbl_sets.setItem(row, 1, dlg_type)
@@ -280,9 +284,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 id = feature.id()
 
-            col_0 = QTableWidgetItem()
-            col_1 = QTableWidgetItem()
-            col_2 = QTableWidgetItem()
+            col_0 = QtWidgets.QTableWidgetItem()
+            col_1 = QtWidgets.QTableWidgetItem()
+            col_2 = QtWidgets.QTableWidgetItem()
 
             # self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"] refers to the field index of the vector file
             # e.g. the field header of the feature has the index 2
@@ -341,3 +345,35 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
 
         self.stereonet.draw()
+
+    def build_collapsible(self):
+        table = CollapsibleTable("lalalala")
+        self.scrollArea.setWidget(table)
+
+
+class CollapsibleTable(QtWidgets.QTableWidget):
+    def __init__(self, title="lala", parent=None):
+        super(CollapsibleTable, self).__init__(parent)
+
+        self.toggle_button = QtWidgets.QToolButton()#text=title, checkable=True, checked=False)
+        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        self.toggle_button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonTextBesideIcon
+        )
+        self.toggle_button.setArrowType(QtCore.Qt.RightArrow)
+
+        self.toggle_button.pressed.connect(self.on_pressed)
+
+        self.toggle_animation = QtCore.QParallelAnimationGroup(self)
+
+        self.content_area = QtWidgets.QScrollArea(
+            maximumHeight=0, minimumHeight=0
+        )
+        self.content_area.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
+        )
+        self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+    @QtCore.pyqtSlot()
+    def on_pressed(self):
+        pass

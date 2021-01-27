@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>361</width>
+    <width>441</width>
     <height>590</height>
    </rect>
   </property>
@@ -38,7 +38,7 @@
       <item>
        <widget class="QTabWidget" name="tbl_set">
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab_sets">
          <attribute name="title">
@@ -105,7 +105,7 @@
           <string>Input data</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="2" column="0">
+          <item row="2" column="1">
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
              <widget class="QPushButton" name="btn_add_data">
@@ -130,7 +130,7 @@
             </item>
            </layout>
           </item>
-          <item row="0" column="0">
+          <item row="0" column="1">
            <layout class="QFormLayout" name="formLayout">
             <item row="0" column="0">
              <widget class="QLabel" name="lbl_set">
@@ -144,7 +144,7 @@
             </item>
            </layout>
           </item>
-          <item row="1" column="0">
+          <item row="1" column="1">
            <widget class="QTableWidget" name="tbl_input">
             <property name="columnCount">
              <number>3</number>
@@ -164,6 +164,32 @@
               <string/>
              </property>
             </column>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QScrollArea" name="scrollArea">
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustIgnored</enum>
+            </property>
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="scroll">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>85</width>
+               <height>382</height>
+              </rect>
+             </property>
+            </widget>
            </widget>
           </item>
          </layout>

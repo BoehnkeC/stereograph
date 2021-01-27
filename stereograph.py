@@ -26,6 +26,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
 from qgis.core import QgsProject
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -52,11 +53,10 @@ class Stereograph:
         self.plugin_dir = os.path.dirname(__file__)
 
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'Stereograph_{}.qm'.format(locale))
+            self.plugin_dir, "i18n", "Stereograph_{}.qm".format(locale)
+        )
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -65,16 +65,15 @@ class Stereograph:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Stereograph')
+        self.menu = self.tr(u"&Stereograph")
         # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'Stereograph')
-        self.toolbar.setObjectName(u'Stereograph')
+        self.toolbar = self.iface.addToolBar(u"Stereograph")
+        self.toolbar.setObjectName(u"Stereograph")
 
-        #print "** INITIALIZING Stereograph"
+        # print "** INITIALIZING Stereograph"
 
         self.pluginIsActive = False
         self.dockwidget = None
-
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -89,8 +88,7 @@ class Stereograph:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('Stereograph', message)
-
+        return QCoreApplication.translate("Stereograph", message)
 
     def add_action(
         self,
@@ -102,7 +100,8 @@ class Stereograph:
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+    ):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -157,35 +156,31 @@ class Stereograph:
             self.toolbar.addAction(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
+            self.iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
 
         return action
 
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/stereograph/icons/main.png'
+        icon_path = ":/plugins/stereograph/icons/main.png"
         self.add_action(
             icon_path,
-            text=self.tr(u'Stereograph'),
+            text=self.tr(u"Stereograph"),
             callback=self.run,
-            parent=self.iface.mainWindow())
-
-    #--------------------------------------------------------------------------
+            parent=self.iface.mainWindow(),
+        )
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
-        #print "** CLOSING Stereograph"
+        # print "** CLOSING Stereograph"
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-        self.dockwidget.unload_test()
+        #self.dockwidget.unload_test()
         # remove this statement if dockwidget is to remain
         # for reuse if plugin is reopened
         # Commented next statement since it causes QGIS crashe
@@ -194,22 +189,17 @@ class Stereograph:
 
         self.pluginIsActive = False
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        #print "** UNLOAD Stereograph"
+        # print "** UNLOAD Stereograph"
 
         for action in self.actions:
-            self.dockwidget.unload_test()
-            self.iface.removePluginMenu(
-                self.tr(u'&Stereograph'),
-                action)
+            #self.dockwidget.unload_test()
+            self.iface.removePluginMenu(self.tr(u"&Stereograph"), action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
-
-    #--------------------------------------------------------------------------
 
     def run(self):
         """Run method that loads and starts the plugin"""
@@ -217,7 +207,7 @@ class Stereograph:
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
-            #print "** STARTING Stereograph"
+            # print "** STARTING Stereograph"
 
             # dockwidget may not exist if:
             #    first run of plugin
