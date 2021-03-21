@@ -41,8 +41,9 @@ from .stereograph_input import StereoGraphInputWidget
 # APSG library by Ondro Lexa: https://github.com/ondrolexa/apsg
 try:
     from apsg import *
+
 except ImportError:
-    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg-0.6.4-py2.py3-none-any.whl')
+    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg.whl')
     sys.path.append(mod_path)
     from apsg import *
 
@@ -64,10 +65,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        self.build_collapsible()
+        self.layers = Layers()
 
-        self.layer_dict = {}
-        self.layers = None
+        #self.layer_dict = {}
+        #self.layer_list = None
 
         self.survey_layers()
 
@@ -93,6 +94,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.btn_add_set.setCheckable(True)
             self.btn_add_set.toggle()
 
+            self.survey_layers()
+
     """
     def unload_test(self):
         QgsProject.instance().removeMapLayers([self.lines_layer.id(), self.planes_layer.id()])
@@ -101,6 +104,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def test_case(self):
         self._load_test()
 
+
+
+        """
         self.layer_dict[self.lines_layer.id()] = {
             "layer": self.lines_layer,
             "properties": {
@@ -130,32 +136,16 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 "index_field_1": 3,
             },
         }
-
-        self.open_dataset_dialog(close=True)
-
-    def layers_added(self, layers):
         """
-        Process the signal of added layers.
+        #self.open_dataset_dialog(close=True)
 
-        :param layers: List of added layers.
-        """
-
-        for layer in layers:
-            self.process_layer_dict(layer)
-
-    def layer_removed(self, layer_id):
+    def layer_removed(self, layer):
         """Process the signal of removed layers.
 
         :param layer_id: A removed layer ID.
         """
 
-        def remove_key(layer_dict, key):
-            copy = dict(layer_dict)
-            del copy[key]
-
-            return copy
-
-        self.layer_dict = remove_key(self.layer_dict, layer_id)
+        self.layer_list.remove_layer(layer)
 
     @staticmethod
     def check_layer_type(layer):
@@ -174,50 +164,19 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
             vlayer = self.check_layer_type(layer)
-            self.process_layer_dict(vlayer)
+            self.layers.add_layer(Layer(vlayer))
 
-        QgsProject.instance().layersAdded.connect(self.layers_added)
         QgsProject.instance().layerRemoved.connect(self.layer_removed)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
 
-    def process_layer_dict(self, layer):
-        """
-        Build a dictionary with information of all valid vector layers in use.
-
-        :param layer: QGIS vector layer.
-        """
-
-        # layer ID is used as key
-        # layer ID is unique for the current QGIS session
-        # NOTE: If computing on reloaded layers in the plugin,
-        # exchange layer IDs in that dictionary with the renewed QGIS layer ID from the TOC
-        # incorporate layer itslef in the dictionary to get a pointer to the field names in later stages
-
-        #self.layers.append(layer)
-
-        self.layer_dict[layer.id()] = {
-            "layer": layer,
-            "properties": {
-                "row": None,
-                "index_type": 0,
-                "type": None,
-                "index_format": 0,
-                "format": None,
-                "field_0": None,
-                "field_1": None,
-                "index_field_0": 0,
-                "index_field_1": 0,
-            },
-        }
-
     def open_dataset_dialog(self, close=False):
         """Open a separate window to load data from disk or to create new dataset from scratch.
         """
 
-        self.dlg_input = StereoGraphInputWidget(self.layer_dict)
+        self.dlg_input = StereoGraphInputWidget(self.layers)
 
         if close:
             self.dlg_input.close()
@@ -226,11 +185,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.dlg_input.show()
             self.dlg_input.exec_()
 
-        self.layer_dict = self.dlg_input.layers
+        self.layers = self.dlg_input.layers
+
         #self.tbl_layers = dlg_input.tbl_layers
 
         # get layers from layer dictionary
-        self.layers = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
+        #self.layer_list = [self.layer_dict[key]["layer"] for key in self.layer_dict.keys()]
 
         self.insert_datasets(self.dlg_input.tbl_layers)
 
@@ -255,15 +215,15 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _fill_dataset_combobox(self):
         # write layer names to dataset combobox
         self.cmb_set.clear()
-        self.cmb_set.addItems([layer.name() for layer in self.layers])
+        self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
     def _build_dataset_table_header(self):
         # get layer from the combobox
         index = self.cmb_set.currentIndex()
 
-        # self.layers[index].id() gives the QGIS-internal layer ID
-        field_0 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]]
-        field_1 = self.layers[index].fields().names()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]]
+        # self.layer_list[index].id() gives the QGIS-internal layer ID
+        field_0 = self.layers.layer_list[index].field_0
+        field_1 = self.layers.layer_list[index].field_1
 
         # set header of input table
         self.tbl_input.setHorizontalHeaderLabels(["ID", field_0, field_1])
@@ -272,27 +232,28 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # get layer from the combobox
         index = self.cmb_set.currentIndex()
         # set row count of input data table to length of selected layer
-        self.tbl_input.setRowCount(len(self.layers[index]))
+        # first, get the layer list from the Layers class
+        # second, access the current index in that list, giving the vector layer
+        # finally, get the feature count (QGIS function) from that vector layer
+        self.tbl_input.setRowCount(self.layers.layer_list[index].layer.featureCount())
 
         for row in range(self.tbl_input.rowCount()):
-            feature = self.layers[index].getFeature(row)
+            feature = self.layers.layer_list[index].layer.getFeature(row)
 
             # set id
             if feature.attributes()[0]:
-                id = feature.attributes()[0]
+                fid = feature.attributes()[0]
 
             else:
-                id = feature.id()
+                fid = feature.id()
 
             col_0 = QtWidgets.QTableWidgetItem()
             col_1 = QtWidgets.QTableWidgetItem()
             col_2 = QtWidgets.QTableWidgetItem()
 
-            # self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"] refers to the field index of the vector file
-            # e.g. the field header of the feature has the index 2
-            col_0.setData(Qt.EditRole, id)
-            col_1.setData(Qt.EditRole, feature.attributes()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_0"]])
-            col_2.setData(Qt.EditRole, feature.attributes()[self.layer_dict[self.layers[index].id()]["properties"]["index_field_1"]])
+            col_0.setData(Qt.EditRole, fid)
+            col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_0])
+            col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
 
             self.tbl_input.setItem(row, 0, col_0)
             self.tbl_input.setItem(row, 1, col_1)
@@ -326,12 +287,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #print(self.tbl_input.item(0, 1).data(Qt.EditRole))
 
         index = self.cmb_set.currentIndex()
-
+        """
         # get the dictionary of stereographic types
         # get the index of the stereographic type
         # get the current type
         types = list(self.dlg_input.type_entries.values())
-        index_type = self.layer_dict[self.layers[index].id()]["properties"]["index_type"]
+        index_type = self.layer_dict[self.layer_list[index].id()]["properties"]["index_type"]
         current_type = types[index_type]
 
         if current_type == "Planes":
@@ -343,37 +304,30 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             #self.stereonet.plane(aFol(1, 2))
             #self.stereonet.plane(aFol(value_1, value_2), color=plt_color, linestyle=style, picker=5)
         #self.stereonet.fig.canvas.mpl_connect('pick_event', self.pick_from_plot)
-
-        self.stereonet.draw()
-
-    def build_collapsible(self):
-        table = CollapsibleTable("lalalala")
-        self.scrollArea.setWidget(table)
+        """
+        #self.stereonet.draw()
 
 
-class CollapsibleTable(QtWidgets.QTableWidget):
-    def __init__(self, title="lala", parent=None):
-        super(CollapsibleTable, self).__init__(parent)
+class Layers:
+    def __init__(self):
+        self.layer_list = []
 
-        self.toggle_button = QtWidgets.QToolButton()#text=title, checkable=True, checked=False)
-        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
-        self.toggle_button.setToolButtonStyle(
-            QtCore.Qt.ToolButtonTextBesideIcon
-        )
-        self.toggle_button.setArrowType(QtCore.Qt.RightArrow)
+    def add_layer(self, layer):
+        self.layer_list.append(layer)
 
-        self.toggle_button.pressed.connect(self.on_pressed)
 
-        self.toggle_animation = QtCore.QParallelAnimationGroup(self)
-
-        self.content_area = QtWidgets.QScrollArea(
-            maximumHeight=0, minimumHeight=0
-        )
-        self.content_area.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
-        )
-        self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
-
-    @QtCore.pyqtSlot()
-    def on_pressed(self):
-        pass
+class Layer:
+    def __init__(self, layer=None):
+        #self.layer = QgsProject.instance().mapLayers()[layer.layer_id]
+        self.layer_id = layer.id()
+        self.layer = layer
+        self.name = layer.name()
+        self.row = None
+        self.index_type = 0
+        self.type = None
+        self.index_format = 0
+        self.format = None
+        self.field_0 = None
+        self.field_1 = None
+        self.index_field_0 = 0
+        self.index_field_1 = 0
