@@ -29,7 +29,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             'dummy': "",
             'lines': "Lines",
             'planes': "Planes",
-            'rake': "Lines on Planes (Rake)",
+            'rake': "Lines on Planes (Rake)",  # abweichung vom einfallen der fläche gemessen am linear
             'circles': "Small Circles",
             'arcs': "Arcs",
         }

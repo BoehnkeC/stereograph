@@ -203,11 +203,18 @@
            <rect>
             <x>-1</x>
             <y>-1</y>
-            <width>341</width>
+            <width>411</width>
             <height>481</height>
            </rect>
           </property>
-          <layout class="QVBoxLayout" name="plot_layout"/>
+          <layout class="QVBoxLayout" name="plot_layout">
+           <property name="spacing">
+            <number>1</number>
+           </property>
+           <property name="sizeConstraint">
+            <enum>QLayout::SetMinimumSize</enum>
+           </property>
+          </layout>
          </widget>
         </widget>
        </widget>

@@ -31,7 +31,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
+
+# import matplotlibs backend for plotting in PyQT5
+# see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from copy import deepcopy
 
@@ -69,11 +73,27 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.stereonet = StereoNet()
         self.layers = Layers()
 
+        # this is the Canvas Widget that
+        # displays the 'figure'it takes the
+        # 'figure' instance as a parameter to __init__
+        self.canvas = FigureCanvas(self.stereonet.fig)
+
+        # this is the Navigation widget
+        # it takes the Canvas widget and a parent
+        self.toolbar = NavigationToolbar(self.canvas, self)
+
+        # adding tool bar to the layout
+        self.plot_layout.addWidget(self.toolbar)
+
+        # adding canvas to the layout
+        self.plot_layout.addWidget(self.canvas)
+
         self.survey_layers()
 
         # add datasets
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
         self.btn_test.clicked.connect(self.test_case)
+        # StereographDockWidget.event.connect()
 
     def _load_test(self):
         from qgis.core import QgsVectorLayer
@@ -287,6 +307,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.stereonet.cla()
 
+        # adding tool bar to the layout
+        self.plot_layout.addWidget(self.toolbar)
+
+        # adding canvas to the layout
+        self.plot_layout.addWidget(self.canvas)
+
     def create_plot(self):
         layer = self.cmb_set.property("layer")  # combobox cmb_set holds the selected layer as property
 
@@ -298,10 +324,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             for x, y in self._get_plot_values():
                 self.stereonet.plane(Fol(x, y))
 
-        self.stereonet.ax.picker = line_picker
+        #self.stereonet.ax.picker = line_picker
 
-        canvas = FigureCanvas(self.stereonet.fig)
-        self.plot_layout.addWidget(canvas)
+        # canvas = FigureCanvas(self.stereonet.fig)
+        # self.plot_layout.addWidget(canvas)
+        #self.plot_layout.setGeometry()
+        print(self.plot_layout.minimumSize())
+        print(self.stereonet.fig.get_size_inches())
 
     def _get_plot_values(self):
         for row in range(self.tbl_input.rowCount()):
