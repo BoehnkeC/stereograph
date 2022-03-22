@@ -68,17 +68,17 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         # set width of format field selection to width of 1st table column
         self.txt_layers.setFixedWidth(self.tbl_layers.columnWidth(0))
 
-        for j in range(len(self.cmbs_type)):
-            self.cmbs_type[j].currentIndexChanged.connect(self.cmb_type_slot)
+        for j in range(len(self.cmbs_type)):  # loop over type combobox
+            self.cmbs_type[j].activated.connect(self.cmb_type_slot)  # check if item in combobox was clicked
 
-        for k in range(len(self.cmbs_format)):
-            self.cmbs_format[k].currentIndexChanged.connect(self.cmb_format_slot)
+        #for k in range(len(self.cmbs_format)):  # loop over format combobox
+        #    self.cmbs_format[k].activated.connect(self.cmb_format_slot)  # check if item in combobox was clicked
 
         self.cmb_field_0.currentIndexChanged.connect(self.cmb_field_0_slot)
         self.cmb_field_1.currentIndexChanged.connect(self.cmb_field_1_slot)
 
         # get the table coordinates of the clicked cell
-        self.tbl_layers.cellClicked.connect(self.txt_layer_slot)
+        #self.tbl_layers.cellClicked.connect(self.txt_layer_slot)
 
     def cmb_field_0_slot(self):
         """
@@ -109,7 +109,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         :param row: The row of the clicked cell.
         :param column: The column of the clicked cell.
         """
-
+        print(f"COLUMN {column}")
         if column == 0:
             # get the item at the clicked table coordinates
             item = self.tbl_layers.item(row, column)
@@ -228,7 +228,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
                     list(format_dict.keys())[index]
                 ][1]
 
-    def cmb_type_slot(self, index, sender=None):
+    def cmb_type_slot(self, sender=None):
         """
         Set the custom structure type for the current layer, e.g. lines, planes etc.
 
@@ -240,62 +240,67 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         # get the type combobox triggering the signal
         # get the corresponding format combobox
         # clear the format combobox
+
         cmb_type = self.sender()
+        print(cmb_type.__class__)
+        print(cmb_type.__class__.__class__)
+        print("HERE")
 
         # if function was not called through click event, hand combobox as function argument
         if not isinstance(cmb_type, QComboBox):
-            cmb_type = sender
+            layer = sender
+            print(layer)
 
-        cmb_format = cmb_type.property("format")
+        #cmb_format = cmb_type.property("format")
         cmb_format.clear()
 
         # get corresponding layer by its layer ID
         # write row of corresponding layer to layer dictionary
-        row = cmb_type.property("row")
+        #row = cmb_type.property("row")
 
         # if a valid selection on the type combobox has been made, fill the format combobox
         # check if the current text is a key in the format dictionary
-        if cmb_type.currentText().lower() in list(self.format_entries.keys()):
+        if layer.cmb_type.currentText().lower() in list(self.format_entries.keys()):
             # get the current dataset type from type combobox, e.g. lines, planes etc.
             # get the corresponding sub-dictionary
             # key is dataset type
-            dataset_type = cmb_type.currentText()
+            dataset_type = layer.cmb_type.currentText()
             format_dict = self.format_entries[dataset_type.lower()]
 
             # fill the format combobox with the keys of the sub-dictionary
-            cmb_format.addItems(list(format_dict.keys()))
+            layer.cmb_format.addItems(list(format_dict.keys()))
 
             # write layer name to format field selection
-            self.txt_layers.setText(self.layers.layer_list[row].name)
+            self.txt_layers.setText(self.layers.layer_list[layer.row].name)
 
             # write the index from the type combobox to the layer dictionary
-            self.layers.layer_list[row].index_type = index
+            self.layers.layer_list[layer.row].index_type = layer.index_type
 
             # write format entry to layer dictionary
             # convert the keys of the format dictionary keys into a list
             # get the proper key at the specified index
-            self.layers.layer_list[row].field_0 = format_dict[
-                list(format_dict.keys())[index-1]
+            self.layers.layer_list[layer.row].field_0 = format_dict[
+                list(format_dict.keys())[layer.index_type-1]
             ][0]
-            self.layers.layer_list[row].field_1 = format_dict[
-                list(format_dict.keys())[index-1]
+            self.layers.layer_list[layer.row].field_1 = format_dict[
+                list(format_dict.keys())[layer.index_type-1]
             ][1]
 
         # no valid selection on the type combobox
         # fill the format combobox with a dummy text
         else:
-            cmb_format.addItem("Please select dataset type")
+            layer.cmb_format.addItem("Please select dataset type")
 
             # no selection, no index
             # write index = 0 to the layer dictionary
-            self.layers.layer_list[row].index_type = 0
+            self.layers.layer_list[layer.row].index_type = 0
 
             self.label_format_fields(
                 self.default_labels
             )
 
-            self.layers.layer_list[row].field_0 = None
-            self.layers.layer_list[row].field_1 = None
+            self.layers.layer_list[layer.row].field_0 = None
+            self.layers.layer_list[layer.row].field_1 = None
 
     def fill_comboboxes(self):
         """
@@ -305,24 +310,26 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         # when comboboxes are filled, also write a dummy index = 0 to layer dictionary
         for layer in self.layers.layer_list:
             # add text to the type comboboxes
-            self.cmbs_type[layer.row].addItems(list(self.type_entries.values()))
+            layer.comboboxes.type.addItems(list(self.type_entries.values()))
+            #self.cmbs_type[layer.row].addItems(list(self.type_entries.values()))
 
-            # supply comboboxes with layer dictionary if previously assigned
+            # layer already has a type selected, assign selection to combobox
             # in this case the type index in the layer dictionary exceeds 0
             if layer.index_type > 0:
                 # set index of combobox to index from layer dictionary
-                self.cmbs_type[layer.row].setCurrentIndex(layer.index_type)
+                layer.comboboxes.type.setCurrentIndex(layer.index_type)
 
                 # fill type combobox
                 # get index from layer dictionary
-                self.cmb_type_slot(layer.index_type, sender=self.cmbs_type[layer.row])
+                #self.cmb_type_slot(layer.index_type, sender=layer.combo_type)
+                self.cmb_type_slot(sender=layer.comboboxes.type)
 
             else:
-                # no preselection found in layer dictionaey
+                # layer has no type selected yet
                 # fill comboboxes with default values
                 layer.index_type = 0
                 layer.index_format = 0
-                self.cmbs_format[layer.row].addItem("Please select dataset type")
+                layer.comboboxes.format.addItem("Please select dataset type")
 
     def insert_layers(self):
         """
@@ -345,27 +352,28 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             # get type field
             # add structure type to type combobox
             # type announces the type of the structural record
-            cmb_type = QComboBox()
+            layer.combo_type = Type()
+            layer.comboboxes = Comboboxes()
 
             # set the row of the table where the combobox was clicked
             # add type combobox to table
-            cmb_type.setProperty("row", index)
-            self.tbl_layers.setCellWidget(index, 1, cmb_type)
-            self.tbl_layers.cellWidget(index, 1).setCurrentIndex(layer.index_type)
+            #layer.combo_type.setProperty("row", index)
+            self.tbl_layers.setCellWidget(index, 1, layer.comboboxes.type)  # put combobox to table
+            self.tbl_layers.cellWidget(index, 1).setCurrentIndex(layer.index_type)  # set index in combobox to 0
 
             # add format combobox to table
-            cmb_format = QComboBox()
-            self.tbl_layers.setCellWidget(index, 2, cmb_format)
+            layer.combo_format = QComboBox()
+            self.tbl_layers.setCellWidget(index, 2, layer.comboboxes.format)  # put combobox to table
             self.tbl_layers.cellWidget(index, 2).setCurrentIndex(layer.index_format)
 
-            cmb_type.setProperty("format", cmb_format)
-            cmb_type.setProperty("layer_id", layer.layer_id)
-            cmb_format.setProperty("layer_id", layer.layer_id)
-            cmb_format.setProperty("type", cmb_type)
+            #layer.combo_type.setProperty("format", layer.combo_format)
+            #layer.combo_type.setProperty("layer_id", layer.layer_id)
+            #layer.combo_format.setProperty("layer_id", layer.layer_id)
+            #layer.combo_format.setProperty("type", layer.combo_type)
 
             # append the combobox to the combobox table
-            self.cmbs_format.append(cmb_format)
-            self.cmbs_type.append(cmb_type)
+            self.cmbs_format.append(layer.comboboxes.format)
+            self.cmbs_type.append(layer.comboboxes.type)
 
     def label_format_fields(self, format_dict, key=None):
         """
@@ -399,3 +407,27 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
 
         self.cmb_field_0.addItems(field_names)
         self.cmb_field_1.addItems(field_names)
+
+
+class Dataset:
+    def __init__(self):
+        self.name = None
+        self.type = None
+        self.format = None
+
+
+class Comboboxes:
+    def __init__(self):
+        self.type = QComboBox()
+        self.format = QComboBox()
+
+
+class Type:
+    def __init__(self):
+        self.cmb_type = QComboBox()
+        self.cmb_format = None
+
+
+class Format:
+    def __init__(self):
+        self.cmb_format = QComboBox()
