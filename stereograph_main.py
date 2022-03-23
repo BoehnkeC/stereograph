@@ -284,7 +284,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._build_dataset_table_header(index)
         self._insert_data(index)
         self.clear_plots()
-        self.create_plot()
+        # self.create_plot()
 
     """
     def pick_from_plot(self, event):
@@ -358,10 +358,10 @@ class Layer:
         self.layer = layer
         self.name = layer.name()
         self.row = None
+        self.cmb_type = None
+        self.cmb_format = None
         self.index_type = 0
-        self.type = None
         self.index_format = 0
-        self.format = None
         self.field_0 = None
         self.field_1 = None
         self.index_field_0 = 0
