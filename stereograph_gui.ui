@@ -91,6 +91,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="btn_rm_set">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Remove dataset</string>
               </property>

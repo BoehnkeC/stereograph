@@ -72,6 +72,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.stereonet = StereoNet()
         self.layers = Layers()
+        self.removable_layer = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
@@ -93,7 +94,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # add datasets
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
         self.btn_test.clicked.connect(self.test_case)
+        self.tbl_sets.cellClicked.connect(self.tbl_sets_slot)
+        self.btn_rm_set.clicked.connect(self.test_remove)
         # StereographDockWidget.event.connect()
+
+    def test_remove(self):
+        print(self.removable_layer)
 
     def _load_test(self):
         from qgis.core import QgsVectorLayer
@@ -170,6 +176,11 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.layers.remove_layer(layer)
 
+    def tbl_sets_slot(self, row, column):
+        self.btn_rm_set.setEnabled(True)
+
+        self.removable_layer = self.layers.layer_list[row]
+
     @staticmethod
     def check_layer_type(layer):
         """
@@ -189,7 +200,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             vlayer = self.check_layer_type(layer)
             self.layers.add_layer(Layer(vlayer))
 
-        QgsProject.instance().layerRemoved.connect(self.layer_removed)
+        #QgsProject.instance().layerRemoved.connect(self.layer_removed)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -348,7 +359,8 @@ class Layers:
         self.layer_list.append(layer)
 
     def remove_layer(self, layer):
-        pass
+        self.layer_list.remove(layer)
+        print("HALLO")
 
 
 class Layer:
