@@ -358,13 +358,10 @@ class Layer:
         self.layer = layer
         self.name = layer.name()
         self.row = None
-        self.comboboxes = None
-        self.combo_type = None
+        self.cmb_type = None
+        self.cmb_format = None
         self.index_type = 0
-        self.type = None
-        self.combo_format = None
         self.index_format = 0
-        self.format = None
         self.field_0 = None
         self.field_1 = None
         self.index_field_0 = 0
