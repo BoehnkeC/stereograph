@@ -100,7 +100,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
         :param row: The row of the clicked cell.
         :param column: The column of the clicked cell.
         """
-        print(f"COLUMN {column}")
+
         if column == 0:
             # get the item at the clicked table coordinates
             item = self.tbl_layers.item(row, column)
@@ -112,7 +112,7 @@ class StereoGraphInputWidget(QtWidgets.QDialog, FORM_CLASS):
             # loop over layer dictionary keys
             for layer in self.layers.layer_list:
                 # check if row of layer equals clicked table row
-                if layer.row == row:
+                if layer.row == row and len(layer.cmb_type.dataset) > 0:
                     # get the current layer and its field names
                     vlayer = QgsProject.instance().mapLayers()[layer.layer_id]
                     field_names = [field.name() for field in vlayer.fields()]

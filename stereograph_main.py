@@ -48,7 +48,7 @@ try:
     from apsg import *
 
 except ImportError:
-    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg.whl')
+    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg-0.6.4-py2.py3-none-any.whl')
     sys.path.append(mod_path)
     from apsg import *
 
@@ -89,17 +89,26 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # adding canvas to the layout
         self.plot_layout.addWidget(self.canvas)
 
-        self.survey_layers()
+        #self.survey_layers()
 
         # add datasets
         self.btn_add_set.clicked.connect(self.open_dataset_dialog)
         self.btn_test.clicked.connect(self.test_case)
         self.tbl_sets.cellClicked.connect(self.tbl_sets_slot)
-        self.btn_rm_set.clicked.connect(self.test_remove)
+        self.btn_rm_set.clicked.connect(self.btn_remove_layer)
+
+        QgsProject.instance().layersRemoved.connect(self.qgs_layer_removed)
+
         # StereographDockWidget.event.connect()
 
-    def test_remove(self):
-        print(self.removable_layer)
+    def qgs_layer_removed(self, id_list):
+        print(id_list[0])
+        #print([layer.layer_id for layer in self.layers.layer_list])
+        print("#######")
+
+    def btn_remove_layer(self):
+        self.layers.remove_layer(self.removable_layer)
+        self.btn_rm_set.setEnabled(False)
 
     def _load_test(self):
         from qgis.core import QgsVectorLayer
@@ -168,17 +177,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
 
-    def layer_removed(self, layer):
-        """Process the signal of removed layers.
-
-        :param layer_id: A removed layer ID.
-        """
-
-        self.layers.remove_layer(layer)
-
     def tbl_sets_slot(self, row, column):
         self.btn_rm_set.setEnabled(True)
-
         self.removable_layer = self.layers.layer_list[row]
 
     @staticmethod
@@ -200,7 +200,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             vlayer = self.check_layer_type(layer)
             self.layers.add_layer(Layer(vlayer))
 
-        #QgsProject.instance().layerRemoved.connect(self.layer_removed)
+        #QgsProject.instance().layersRemoved.connect(self.qgs_layer_removed)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -359,8 +359,9 @@ class Layers:
         self.layer_list.append(layer)
 
     def remove_layer(self, layer):
+        print(f"BEFORE {self.layer_list}")
         self.layer_list.remove(layer)
-        print("HALLO")
+        print(f"After {self.layer_list}")
 
 
 class Layer:
