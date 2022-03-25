@@ -102,9 +102,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # StereographDockWidget.event.connect()
 
     def qgs_layer_removed(self, id_list):
-        print(id_list[0])
-        #print([layer.layer_id for layer in self.layers.layer_list])
-        print("#######")
+        if len(self.layers.layer_list) > 0:  # layer list can be empty if no layers have been loaded to the plugin yet
+            print([layer.layer_id for layer in self.layers.layer_list])
+            # self.removable_layer = self.layers.layer_list[row]
+            #self.layers.remove_layer(self.removable_layer)
 
     def btn_remove_layer(self):
         self.layers.remove_layer(self.removable_layer)
@@ -222,9 +223,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.layers = self.dlg_input.layers
         self._fill_dataset_combobox()
 
-        self.insert_datasets(self.dlg_input.tbl_layers)
-
-        self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
+        if len(self.layers.layer_list) > 0:
+            self.insert_datasets(self.dlg_input.tbl_layers)
+            self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
 
     def insert_datasets(self, input_table):
         """Fill dataset table in Datasets tab"""
@@ -359,9 +360,7 @@ class Layers:
         self.layer_list.append(layer)
 
     def remove_layer(self, layer):
-        print(f"BEFORE {self.layer_list}")
         self.layer_list.remove(layer)
-        print(f"After {self.layer_list}")
 
 
 class Layer:
