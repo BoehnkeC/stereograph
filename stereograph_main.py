@@ -367,7 +367,7 @@ class Layer:
     def __init__(self, layer=None):
         #self.layer = QgsProject.instance().mapLayers()[layer.layer_id]
         self.layer_id = layer.id()
-        self.layer = layer
+        self.layer = layer  # QGIS vlayer
         self.name = layer.name()
         self.row = None
         self.cmb_type = None
