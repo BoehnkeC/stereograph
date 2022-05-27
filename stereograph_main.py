@@ -31,6 +31,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
+from .options import Types, TypesIndices
 
 # import matplotlibs backend for plotting in PyQT5
 # see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
@@ -48,7 +49,7 @@ try:
     from apsg import *
 
 except ImportError:
-    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mod', 'apsg-0.6.4-py2.py3-none-any.whl')
+    mod_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "mod", "apsg-0.7.0-py2.py3-none-any.whl")
     sys.path.append(mod_path)
     from apsg import *
 
@@ -89,267 +90,33 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # adding canvas to the layout
         self.plot_layout.addWidget(self.canvas)
 
-        #self.survey_layers()
+        self.survey_layers()  # get layers loaded in QGIS
+        self.insert_datasets()  # insert layers in dataset combobox
+        self.insert_types()
 
-        # add datasets
-        self.btn_add_set.clicked.connect(self.open_dataset_dialog)
-        self.btn_test.clicked.connect(self.test_case)
-        self.tbl_sets.cellClicked.connect(self.tbl_sets_slot)
-        self.btn_rm_set.clicked.connect(self.btn_remove_layer)
-
-        QgsProject.instance().layersRemoved.connect(self.qgs_layer_removed)
-
-        # StereographDockWidget.event.connect()
-
-    def qgs_layer_removed(self, id_list):
-        if len(self.layers.layer_list) > 0:  # layer list can be empty if no layers have been loaded to the plugin yet
-            print([layer.layer_id for layer in self.layers.layer_list])
-            # self.removable_layer = self.layers.layer_list[row]
-            #self.layers.remove_layer(self.removable_layer)
-
-    def btn_remove_layer(self):
-        self.layers.remove_layer(self.removable_layer)
-        self.btn_rm_set.setEnabled(False)
-
-    def _load_test(self):
-        from qgis.core import QgsVectorLayer
-
-        lines_path = os.path.join(os.path.dirname(__file__), "test", "data", "structures", "lines.shp")
-        planes_path = os.path.join(os.path.dirname(__file__), "test", "data", "structures", "planes.shp")
-
-        self.lines_layer = QgsVectorLayer(lines_path, "Lines", "ogr")
-        self.planes_layer = QgsVectorLayer(planes_path, "Planes", "ogr")
-
-        if not self.lines_layer.isValid() and not self.planes_layer.isValid():
-            print("Layer failed to load!")
-
-        else:
-            QgsProject.instance().addMapLayer(self.lines_layer)
-            QgsProject.instance().addMapLayer(self.planes_layer)
-
-            self.btn_add_set.setCheckable(True)
-            self.btn_add_set.toggle()
-
-            self.survey_layers()
-
-    """
-    def unload_test(self):
-        QgsProject.instance().removeMapLayers([self.lines_layer.id(), self.planes_layer.id()])
-    """
-
-    def test_case(self):
-        self._load_test()
-
-        self.layers.layer_list[0].row = 0
-        self.layers.layer_list[0].index_type = 1
-        self.layers.layer_list[0].type = "Lines"
-        self.layers.layer_list[0].index_format = 0
-        self.layers.layer_list[0].format = "TP"
-        self.layers.layer_list[0].field_0 = "Trend"
-        self.layers.layer_list[0].field_1 = "Plunge"
-        self.layers.layer_list[0].index_field_0 = 2
-        self.layers.layer_list[0].index_field_1 = 3
-
-        self.layers.layer_list[1].row = 1
-        self.layers.layer_list[1].index_type = 2
-        self.layers.layer_list[1].type = "Planes"
-        self.layers.layer_list[1].index_format = 0
-        self.layers.layer_list[1].format = "AD"
-        self.layers.layer_list[1].field_0 = "Strike Azimuth"
-        self.layers.layer_list[1].field_1 = "Dip Magnitude"
-        self.layers.layer_list[1].index_field_0 = 2
-        self.layers.layer_list[1].index_field_1 = 3
-
-        self._fill_dataset_combobox()
-
-        self.tbl_sets.setRowCount(len(self.layers.layer_list))
-
-        for row in range(len(self.layers.layer_list)):
-            dlg_layer = QtWidgets.QTableWidgetItem(self.layers.layer_list[row].name)
-            dlg_type = QtWidgets.QTableWidgetItem(self.layers.layer_list[row].index_type)
-            dlg_format = QtWidgets.QTableWidgetItem(self.layers.layer_list[row].index_format)
-
-            self.tbl_sets.setItem(row, 0, dlg_layer)
-            self.tbl_sets.setItem(row, 1, dlg_type)
-            self.tbl_sets.setItem(row, 2, dlg_format)
-
-        # initially fill input data table with first dataset (default)
-        self.insert_input_data(index=0)
-
-        self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
-
-    def tbl_sets_slot(self, row, column):
-        self.btn_rm_set.setEnabled(True)
-        self.removable_layer = self.layers.layer_list[row]
-
-    @staticmethod
-    def check_layer_type(layer):
-        """
-        Check the layer type. Only accept vector layers.
-
-        :param layer: QGIS layer to be checked, as tuple.
-
-        :returns layer: QGIS layer if vector layer.
-        """
-
-        # layer is a tuple, e.g. ('lines_dfb84f76_7835_4663_8da0_d43d8c1620f7', <QgsMapLayer: 'lines' (ogr)>)
-        if layer[1].type() == QgsMapLayerType.VectorLayer:
-            return layer[1]
+        # self.cmb_set.currentIndexChanged.connect(self.insert_datasets)
 
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
-            vlayer = self.check_layer_type(layer)
-            self.layers.add_layer(Layer(vlayer))
+            # layer is a tuple, e.g. ('lines_dfb84f76_7835_4663_8da0_d43d8c1620f7', <QgsMapLayer: 'lines' (ogr)>)
+            if layer[1].type() == QgsMapLayerType.VectorLayer:
+                self.layers.add_layer(Layer(layer[1]))
 
-        #QgsProject.instance().layersRemoved.connect(self.qgs_layer_removed)
-
-    def closeEvent(self, event):
-        self.closingPlugin.emit()
-        event.accept()
-
-    def open_dataset_dialog(self, close=False):
-        """Open a separate window to load data from disk or to create new dataset from scratch.
-        """
-
-        self.dlg_input = StereoGraphInputWidget(self.layers)
-
-        if close:
-            self.dlg_input.close()
-
-        else:
-            self.dlg_input.show()
-            self.dlg_input.exec_()
-
-        self.layers = self.dlg_input.layers
-        self._fill_dataset_combobox()
-
-        if len(self.layers.layer_list) > 0:
-            self.insert_datasets(self.dlg_input.tbl_layers)
-            self.cmb_set.currentIndexChanged.connect(self.insert_input_data)
-
-    def insert_datasets(self, input_table):
-        """Fill dataset table in Datasets tab"""
-
-        self.tbl_sets.setRowCount(input_table.rowCount())
-
-        for row in range(input_table.rowCount()):
-            dlg_layer = QtWidgets.QTableWidgetItem(input_table.item(row, 0).text())
-            dlg_type = QtWidgets.QTableWidgetItem(input_table.cellWidget(row, 1).currentText())
-            dlg_format = QtWidgets.QTableWidgetItem(input_table.cellWidget(row, 2).currentText())
-
-            self.tbl_sets.setItem(row, 0, dlg_layer)
-            self.tbl_sets.setItem(row, 1, dlg_type)
-            self.tbl_sets.setItem(row, 2, dlg_format)
-
-        # initially fill input data table with first dataset (default)
-        self.insert_input_data(index=0)
-
-    def _fill_dataset_combobox(self):
-        # write layer names to dataset combobox in Input Data tab
+    def insert_datasets(self):
         self.cmb_set.clear()
         self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
-    def _build_dataset_table_header(self, index):
-        # self.layer_list[index].id() gives the QGIS-internal layer ID
-        field_0 = self.layers.layer_list[index].field_0
-        field_1 = self.layers.layer_list[index].field_1
+    def insert_types(self):
+        def _test(selection, _type=TypesIndices.dummy):
+            print(TypesIndices(1))
 
-        # set header of input table
-        self.tbl_input.setHorizontalHeaderLabels(["ID", field_0, field_1])
+        self.cmb_type.clear()
+        self.cmb_type.addItems([_type.value for _type in Types])
 
-    def _insert_data(self, index):
-        # set row count of input data table to length of selected layer
-        # first, get the layer list from the Layers class
-        # second, access the current index in that list, giving the vector layer
-        # finally, get the feature count (QGIS function) from that vector layer
-        self.tbl_input.setRowCount(self.layers.layer_list[index].layer.featureCount())
-        self.cmb_set.setProperty("layer", self.layers.layer_list[index])  # set layer class as property of dataset combobox
+        selection = Types.lines
+        index = 1
 
-        for row in range(self.tbl_input.rowCount()):
-            feature = self.layers.layer_list[index].layer.getFeature(row)
-
-            # set id
-            if feature.attributes()[0]:
-                fid = feature.attributes()[0]
-
-            else:
-                fid = feature.id()
-
-            col_0 = QtWidgets.QTableWidgetItem()
-            col_1 = QtWidgets.QTableWidgetItem()
-            col_2 = QtWidgets.QTableWidgetItem()
-
-            col_0.setData(Qt.EditRole, fid)
-            col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_0])
-            col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
-
-            self.tbl_input.setItem(row, 0, col_0)
-            self.tbl_input.setItem(row, 1, col_1)
-            self.tbl_input.setItem(row, 2, col_2)
-
-    def insert_input_data(self, index=None):
-        # index is None for any other activity, i.e. apart from initializing
-        if index is None:
-            # get layer from the combobox
-            index = self.cmb_set.currentIndex()
-
-        self._build_dataset_table_header(index)
-        self._insert_data(index)
-        self.clear_plots()
-        # self.create_plot()
-
-    """
-    def pick_from_plot(self, event):
-        this_item = event.artist
-        xdata = this_item.get_xdata()
-        ydata = this_item.get_ydata()
-        ind = event.ind
-
-        points = tuple(zip(xdata[ind], ydata[ind]))
-
-        #print('Points: ', points)
-        #print('X = ' + str(np.take(xdata, ind)[0]))
-        #print('Y = ' + str(np.take(ydata, ind)[0]))
-        print(self.stereonet.draw().contains(event))
-    """
-
-    def clear_plots(self):
-        for i in reversed(range(self.plot_layout.count())):
-            self.plot_layout.itemAt(i).widget().setParent(None)
-
-        self.stereonet.cla()
-
-        # adding tool bar to the layout
-        self.plot_layout.addWidget(self.toolbar)
-
-        # adding canvas to the layout
-        self.plot_layout.addWidget(self.canvas)
-
-    def create_plot(self):
-        layer = self.cmb_set.property("layer")  # combobox cmb_set holds the selected layer as property
-
-        if layer.type.lower() == "lines":
-            for x, y in self._get_plot_values():
-                self.stereonet.line(Lin(x, y))
-
-        elif layer.type.lower() == "planes":
-            for x, y in self._get_plot_values():
-                self.stereonet.plane(Fol(x, y))
-
-        #self.stereonet.ax.picker = line_picker
-
-        # canvas = FigureCanvas(self.stereonet.fig)
-        # self.plot_layout.addWidget(canvas)
-        #self.plot_layout.setGeometry()
-        print(self.plot_layout.minimumSize())
-        print(self.stereonet.fig.get_size_inches())
-
-    def _get_plot_values(self):
-        for row in range(self.tbl_input.rowCount()):
-            x = self.tbl_input.item(row, 1).data(Qt.EditRole)
-            y = self.tbl_input.item(row, 2).data(Qt.EditRole)
-
-            yield x, y
+        _test(selection, index)
 
 
 class Layers:
