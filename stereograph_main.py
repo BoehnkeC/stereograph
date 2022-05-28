@@ -71,24 +71,24 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        self.stereonet = StereoNet()
+        #self.stereonet = StereoNet()
         self.layers = Layers()
         self.removable_layer = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
         # 'figure' instance as a parameter to __init__
-        self.canvas = FigureCanvas(self.stereonet.fig)
+        #self.canvas = FigureCanvas(self.stereonet.fig)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
-        self.toolbar = NavigationToolbar(self.canvas, self)
+        #self.toolbar = NavigationToolbar(self.canvas, self)
 
         # adding tool bar to the layout
-        self.plot_layout.addWidget(self.toolbar)
+        #self.plot_layout.addWidget(self.toolbar)
 
         # adding canvas to the layout
-        self.plot_layout.addWidget(self.canvas)
+        #self.plot_layout.addWidget(self.canvas)
 
         self.survey_layers()  # get layers loaded in QGIS
         self.insert_datasets()  # insert layers in dataset combobox
@@ -104,19 +104,22 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def insert_datasets(self):
         self.cmb_set.clear()
-        self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
+
+        if len(self.layers.layer_list) > 0:
+            self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
     def insert_types(self):
-        def _test(selection, _type=TypesIndices.dummy):
-            print(TypesIndices(1))
-
         self.cmb_type.clear()
-        self.cmb_type.addItems([_type.value for _type in Types])
+        #self.cmb_type.addItems([_type.value for _type in Types])
 
-        selection = Types.lines
+        #selection = Types.lines
         index = 1
 
-        _test(selection, index)
+        self.test(_type=1)
+
+    def test(self, _type=TypesIndices.dummy):
+        print(TypesIndices(_type).name)
+        print(Types[TypesIndices(_type).name])
 
 
 class Layers:
