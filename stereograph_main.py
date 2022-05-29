@@ -129,10 +129,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.cmb_format.addItem("Please select dataset type.")
 
         elif self.cmb_type.currentIndex() == TypesIndices.lines:
-            self.cmb_format.addItems([_line.value for _line in Formats.Lines])
+            self.cmb_format.addItems([_line.value for _line in FormatsShort.Lines])
 
         elif self.cmb_type.currentIndex() == TypesIndices.planes:
-            self.cmb_format.addItems([_plane.value for _plane in Formats.Planes])
+            self.cmb_format.addItems([_plane.value for _plane in FormatsShort.Planes])
 
         else:
             raise AttributeError("The selected type and format and not implemented.")
