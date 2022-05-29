@@ -92,8 +92,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #self.plot_layout.addWidget(self.canvas)
 
         self.survey_layers()  # get layers loaded in QGIS
-        self.fill_dataset_combobox()  # insert layers in dataset combobox
-        self.fill_types_and_formats()
+        self.init_dataset_combobox()  # insert layers in dataset combobox
+        self.init_types_and_formats()
 
         self.cmb_set.currentIndexChanged.connect(self.store_layer)
         self.cmb_type.currentIndexChanged.connect(self.store_type)
@@ -105,25 +105,25 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if layer[1].type() == QgsMapLayerType.VectorLayer:
                 self.layers.add_layer(Layer(layer[1]))
 
-    def fill_dataset_combobox(self):
+    def init_dataset_combobox(self):
         self.cmb_set.clear()
 
         if len(self.layers.layer_list) > 0:
             self.cmb_set.addItem("Deselect")
             self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
-    def fill_types_and_formats(self):
+    def init_types_and_formats(self):
         self.cmb_type.clear()
         self.cmb_type.addItems([_type.value for _type in Types])
 
-        self.fill_types_combobox()  # nothing selected yet, fill formats with dummy entry
+        self.fill_format_combobox()  # nothing selected yet, fill formats with dummy entry
 
-        self.cmb_type.currentIndexChanged.connect(self.type_index_changed)
+        # self.cmb_type.currentIndexChanged.connect(self.type_index_changed)
 
     def type_index_changed(self):
-        self.fill_types_combobox()  # fill formats based on type selection
+        self.fill_format_combobox()  # fill formats based on type selection
 
-    def fill_types_combobox(self):
+    def fill_format_combobox(self):
         self.cmb_format.clear()
 
         if self.cmb_type.currentIndex() == TypesIndices.dummy:
@@ -147,6 +147,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if layer.set_index is None:  # layer not stored yet
                 layer.set_index = self.cmb_set.currentIndex()
 
+            else:
+                if layer.type_index is not None:
+                    self.cmb_type.setCurrentIndex(layer.type_index)
+
+                if layer.format_index is not None:
+                    self.cmb_format.setCurrentIndex(layer.format_index)
+
         else:  # index of dataset combobox is 0, get back to default setup
             self.cmb_type.setCurrentIndex(0)
             self.cmb_format.setCurrentIndex(0)
@@ -155,22 +162,28 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
 
     def store_type(self):
-        layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+        if len(self.layers.layer_list) > 0:
+            layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
-        if layer.type_index is None and self.cmb_type.currentIndex() > 0:  # type not stored yet
-            layer.type_index = self.cmb_type.currentIndex()
+            if layer.type_index is None and self.cmb_type.currentIndex() > 0:  # type not stored yet
+                layer.type_index = self.cmb_type.currentIndex()
 
-        else:
-            self.cmb_type.setCurrentIndex(layer.type_index)
+            #else:
+            #    self.cmb_type.setCurrentIndex(layer.type_index)
+
+            print(f"Type {layer.type_index}")
 
     def store_format(self):
-        layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+        if len(self.layers.layer_list) > 0:
+            layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
-        if layer.format_index is None:
-            layer.format_index = self.cmb_format.currentIndex()  # format not stored yet
+            if layer.format_index is None:
+                layer.format_index = self.cmb_format.currentIndex()  # format not stored yet
 
-        else:
-            self.cmb_format.setCurrentIndex(layer.format_index)
+            #else:
+            #    self.cmb_format.setCurrentIndex(layer.format_index)
+
+            print(f"Format {layer.format_index}")
 
     def fill_data_table(self):
         #self.fill_types_combobox()

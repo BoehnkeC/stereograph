@@ -1,1 +1,7 @@
+*
 **/__pycache__
+!options.py
+!stereograph_main.py
+!stereograph.py
+!stereograph_gui.ui
+!stereograph_plt_settings_gui.ui
