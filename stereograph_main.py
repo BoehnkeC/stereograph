@@ -31,7 +31,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
-from .options import Types, TypesIndices, FormatsIndices, Formats
+from .options import Types, TypesIndices, Formats
 
 # import matplotlibs backend for plotting in PyQT5
 # see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
@@ -91,10 +91,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #self.plot_layout.addWidget(self.canvas)
 
         self.survey_layers()  # get layers loaded in QGIS
-        self.insert_datasets()  # insert layers in dataset combobox
-        self.insert_types()
+        self.fill_dataset_combobox()  # insert layers in dataset combobox
+        self.fill_types_and_formats()
 
-        # self.cmb_set.currentIndexChanged.connect(self.insert_datasets)
+        self.cmb_set.currentIndexChanged.connect(self.fill_data_table)
 
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
@@ -102,13 +102,14 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if layer[1].type() == QgsMapLayerType.VectorLayer:
                 self.layers.add_layer(Layer(layer[1]))
 
-    def insert_datasets(self):
+    def fill_dataset_combobox(self):
         self.cmb_set.clear()
 
         if len(self.layers.layer_list) > 0:
+            self.cmb_set.addItem("Deselect")
             self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
-    def insert_types(self):
+    def fill_types_and_formats(self):
         self.cmb_type.clear()
         self.cmb_type.addItems([_type.value for _type in Types])
 
@@ -133,6 +134,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         else:
             raise AttributeError("The selected type and format and not implemented.")
+
+    def fill_data_table(self):
+        if self.cmb_set.currentIndex() > 0:
+            print(self.cmb_set.currentText())
 
 
 class Layers:
