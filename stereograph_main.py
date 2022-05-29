@@ -31,7 +31,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
-from .options import Types, TypesIndices, Formats
+from .options import Types, TypesIndices, FormatsShort, FormatsLong
 
 # import matplotlibs backend for plotting in PyQT5
 # see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
@@ -95,6 +95,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.fill_types_and_formats()
 
         self.cmb_set.currentIndexChanged.connect(self.fill_data_table)
+        self.cmb_type.currentIndexChanged.connect(self.fill_data_table)
+        self.cmb_format.currentIndexChanged.connect(self.fill_data_table)
 
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
@@ -136,7 +138,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             raise AttributeError("The selected type and format and not implemented.")
 
     def fill_data_table(self):
-        if self.cmb_set.currentIndex() > 0:
+        if self.cmb_set.currentIndex() > 0 and self.cmb_type.currentIndex() > 0:
             # header
             # self.layer_list[index].id() gives the QGIS-internal layer ID
             #field_0 = self.layers.layer_list[index].field_0
@@ -148,7 +150,28 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.tbl_input.setRowCount(
                 self.layers.layer_list[self.cmb_set.currentIndex()].layer.featureCount()
             )
-            print(self.cmb_set.currentText())
+
+            for row in range(self.tbl_input.rowCount()):
+                feature = self.layers.layer_list[self.cmb_set.currentIndex()].layer.getFeature(row)
+
+                # set id
+                if feature.attributes()[0]:
+                    fid = feature.attributes()[0]
+
+                else:
+                    fid = feature.id()
+
+                col_0 = QtWidgets.QTableWidgetItem()
+                col_1 = QtWidgets.QTableWidgetItem()
+                col_2 = QtWidgets.QTableWidgetItem()
+
+                col_0.setData(Qt.EditRole, fid)
+                #col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_0])
+                #col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
+
+                self.tbl_input.setItem(row, 0, col_0)
+                #self.tbl_input.setItem(row, 1, col_1)
+                #self.tbl_input.setItem(row, 2, col_2)
 
         else:
             self.cmb_type.setCurrentIndex(0)

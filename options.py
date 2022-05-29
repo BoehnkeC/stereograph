@@ -19,7 +19,7 @@ class Types(Enum):
     arcs = "Arcs"
 
 
-class Formats:
+class FormatsShort:
     class Lines(Enum):
         tp = "TP"
         pq = "PQ"
@@ -27,3 +27,13 @@ class Formats:
     class Planes(Enum):
         ad = "AD"
         az = "AZ"
+
+
+class FormatsLong:
+    class Lines(Enum):
+        tp = ("Trend", "Plunge")
+        pq = ("Plunge", "Trend Quadrant")
+
+    class Planes(Enum):
+        ad = ("Strike Azimuth", "Dip Magnitude")
+        az = ("Unspecified", "Unspecified")
