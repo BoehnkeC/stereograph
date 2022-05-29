@@ -137,7 +137,26 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def fill_data_table(self):
         if self.cmb_set.currentIndex() > 0:
+            # header
+            # self.layer_list[index].id() gives the QGIS-internal layer ID
+            #field_0 = self.layers.layer_list[index].field_0
+            #field_1 = self.layers.layer_list[index].field_1
+
+            # set header of input table
+            self.tbl_input.setHorizontalHeaderLabels(["ID", "H1", "H2"])
+
+            self.tbl_input.setRowCount(
+                self.layers.layer_list[self.cmb_set.currentIndex()].layer.featureCount()
+            )
             print(self.cmb_set.currentText())
+
+        else:
+            self.cmb_type.setCurrentIndex(0)
+            self.cmb_format.setCurrentIndex(0)
+
+            self.tbl_input.setRowCount(0)
+            self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
+
 
 
 class Layers:
