@@ -156,7 +156,7 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QComboBox" name="comboBox"/>
+             <widget class="QComboBox" name="cmb_format"/>
             </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label">

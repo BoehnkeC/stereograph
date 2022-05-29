@@ -31,7 +31,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
-from .options import Types, TypesIndices
+from .options import Types, TypesIndices, FormatsIndices, Formats
 
 # import matplotlibs backend for plotting in PyQT5
 # see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
@@ -110,16 +110,29 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def insert_types(self):
         self.cmb_type.clear()
-        #self.cmb_type.addItems([_type.value for _type in Types])
+        self.cmb_type.addItems([_type.value for _type in Types])
 
-        #selection = Types.lines
-        index = 1
+        self.fill_types_combobox()  # nothing selected yet, fill formats with dummy entry
 
-        self.test(_type=1)
+        self.cmb_type.currentIndexChanged.connect(self.type_index_changed)
 
-    def test(self, _type=TypesIndices.dummy):
-        print(TypesIndices(_type).name)
-        print(Types[TypesIndices(_type).name])
+    def type_index_changed(self):
+        self.fill_types_combobox()  # fill formats based on type selection
+
+    def fill_types_combobox(self):
+        self.cmb_format.clear()
+
+        if self.cmb_type.currentIndex() == TypesIndices.dummy:
+            self.cmb_format.addItem("Please select dataset type.")
+
+        elif self.cmb_type.currentIndex() == TypesIndices.lines:
+            self.cmb_format.addItems([_line.value for _line in Formats.Lines])
+
+        elif self.cmb_type.currentIndex() == TypesIndices.planes:
+            self.cmb_format.addItems([_plane.value for _plane in Formats.Planes])
+
+        else:
+            raise AttributeError("The selected type and format and not implemented.")
 
 
 class Layers:
