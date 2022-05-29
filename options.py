@@ -11,7 +11,7 @@ class TypesIndices(IntEnum):
 
 
 class Types(Enum):
-    dummy = ""
+    dummy = "--No type--"
     lines = "Lines"
     planes = "Planes"
     rake = "Lines on Planes (Rake)"  # abweichung vom einfallen der fläche gemessen am linear

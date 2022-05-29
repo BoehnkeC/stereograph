@@ -74,6 +74,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #self.stereonet = StereoNet()
         self.layers = Layers()
         self.removable_layer = None
+        self.formats = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
@@ -94,9 +95,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.fill_dataset_combobox()  # insert layers in dataset combobox
         self.fill_types_and_formats()
 
-        self.cmb_set.currentIndexChanged.connect(self.fill_data_table)
-        self.cmb_type.currentIndexChanged.connect(self.fill_data_table)
-        self.cmb_format.currentIndexChanged.connect(self.fill_data_table)
+        self.cmb_set.currentIndexChanged.connect(self.store_layer)
+        self.cmb_type.currentIndexChanged.connect(self.store_type)
+        self.cmb_format.currentIndexChanged.connect(self.store_format)
 
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
@@ -130,29 +131,62 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         elif self.cmb_type.currentIndex() == TypesIndices.lines:
             self.cmb_format.addItems([_line.value for _line in FormatsShort.Lines])
+            self.formats = [_line.value for _line in FormatsLong.Lines]
 
         elif self.cmb_type.currentIndex() == TypesIndices.planes:
             self.cmb_format.addItems([_plane.value for _plane in FormatsShort.Planes])
+            self.formats = [_plane.value for _plane in FormatsLong.Planes]
 
         else:
             raise AttributeError("The selected type and format and not implemented.")
 
+    def store_layer(self):
+        if self.cmb_set.currentIndex() > 0:
+            layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+
+            if layer.set_index is None:  # layer not stored yet
+                layer.set_index = self.cmb_set.currentIndex()
+
+        else:  # index of dataset combobox is 0, get back to default setup
+            self.cmb_type.setCurrentIndex(0)
+            self.cmb_format.setCurrentIndex(0)
+
+            self.tbl_input.setRowCount(0)
+            self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
+
+    def store_type(self):
+        layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+
+        if layer.type_index is None and self.cmb_type.currentIndex() > 0:  # type not stored yet
+            layer.type_index = self.cmb_type.currentIndex()
+
+        else:
+            self.cmb_type.setCurrentIndex(layer.type_index)
+
+    def store_format(self):
+        layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+
+        if layer.format_index is None:
+            layer.format_index = self.cmb_format.currentIndex()  # format not stored yet
+
+        else:
+            self.cmb_format.setCurrentIndex(layer.format_index)
+
     def fill_data_table(self):
+        #self.fill_types_combobox()
+
         if self.cmb_set.currentIndex() > 0 and self.cmb_type.currentIndex() > 0:
-            # header
-            # self.layer_list[index].id() gives the QGIS-internal layer ID
-            #field_0 = self.layers.layer_list[index].field_0
-            #field_1 = self.layers.layer_list[index].field_1
+            self.formats = self.formats[self.cmb_format.currentIndex()]  # slice list at current index of format combobox
 
             # set header of input table
-            self.tbl_input.setHorizontalHeaderLabels(["ID", "H1", "H2"])
+            self.tbl_input.setHorizontalHeaderLabels(["ID", self.formats[0], self.formats[1]])
 
             self.tbl_input.setRowCount(
-                self.layers.layer_list[self.cmb_set.currentIndex()].layer.featureCount()
+                self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.featureCount()
             )
 
             for row in range(self.tbl_input.rowCount()):
-                feature = self.layers.layer_list[self.cmb_set.currentIndex()].layer.getFeature(row)
+                feature = self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.getFeature(row)
 
                 # set id
                 if feature.attributes()[0]:
@@ -173,7 +207,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 #self.tbl_input.setItem(row, 1, col_1)
                 #self.tbl_input.setItem(row, 2, col_2)
 
-        else:
+        else:  # index of dataset combobox is 0, get back to default setup
             self.cmb_type.setCurrentIndex(0)
             self.cmb_format.setCurrentIndex(0)
 
@@ -199,12 +233,6 @@ class Layer:
         self.layer_id = layer.id()
         self.layer = layer  # QGIS vlayer
         self.name = layer.name()
-        self.row = None
-        self.cmb_type = None
-        self.cmb_format = None
-        self.index_type = 0
-        self.index_format = 0
-        self.field_0 = None
-        self.field_1 = None
-        self.index_field_0 = 0
-        self.index_field_1 = 0
+        self.set_index = None
+        self.type_index = None
+        self.format_index = None
