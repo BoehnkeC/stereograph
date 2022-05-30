@@ -118,11 +118,6 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.fill_format_combobox()  # nothing selected yet, fill formats with dummy entry
 
-        # self.cmb_type.currentIndexChanged.connect(self.type_index_changed)
-
-    def type_index_changed(self):
-        self.fill_format_combobox()  # fill formats based on type selection
-
     def fill_format_combobox(self):
         self.cmb_format.clear()
 
@@ -146,44 +141,49 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             if layer.set_index is None:  # layer not stored yet
                 layer.set_index = self.cmb_set.currentIndex()
+                self.fill_comboboxes_default()
 
-            else:
-                if layer.type_index is not None:
+            else:  # layer already stored
+                if layer.type_index is not None:  # type already stored
                     self.cmb_type.setCurrentIndex(layer.type_index)
 
-                if layer.format_index is not None:
-                    self.cmb_format.setCurrentIndex(layer.format_index)
+                    if layer.format_index is not None:  # format index already stored
+                        print(layer.format_index)
+                        self.fill_format_combobox()
+                        self.cmb_format.setCurrentIndex(layer.format_index)
+
+                    else:
+                        self.fill_format_combobox()
+                        self.cmb_format.setCurrentIndex(0)
+
+                else:
+                    self.cmb_type.setCurrentIndex(0)
 
         else:  # index of dataset combobox is 0, get back to default setup
-            self.cmb_type.setCurrentIndex(0)
-            self.cmb_format.setCurrentIndex(0)
+            self.fill_comboboxes_default()
 
-            self.tbl_input.setRowCount(0)
-            self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
+    def fill_comboboxes_default(self):
+        self.cmb_type.setCurrentIndex(0)
+        self.fill_format_combobox()
+
+        self.tbl_input.setRowCount(0)
+        self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
 
     def store_type(self):
         if len(self.layers.layer_list) > 0:
             layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
-            if layer.type_index is None and self.cmb_type.currentIndex() > 0:  # type not stored yet
+            if self.cmb_type.currentIndex() > 0:
                 layer.type_index = self.cmb_type.currentIndex()
-
-            #else:
-            #    self.cmb_type.setCurrentIndex(layer.type_index)
-
-            print(f"Type {layer.type_index}")
+                self.fill_format_combobox()
+                layer.format_index = self.cmb_format.currentIndex()
 
     def store_format(self):
         if len(self.layers.layer_list) > 0:
             layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
-            if layer.format_index is None:
-                layer.format_index = self.cmb_format.currentIndex()  # format not stored yet
-
-            #else:
-            #    self.cmb_format.setCurrentIndex(layer.format_index)
-
-            print(f"Format {layer.format_index}")
+            layer.format_index = self.cmb_format.currentIndex()
+            # print(layer.format_index)
 
     def fill_data_table(self):
         #self.fill_types_combobox()
