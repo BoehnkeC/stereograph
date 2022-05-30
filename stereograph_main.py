@@ -142,19 +142,18 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if layer.set_index is None:  # layer not stored yet
                 layer.set_index = self.cmb_set.currentIndex()
                 self.fill_comboboxes_default()
+                layer.type_index = None
+                layer.format_index = None
 
             else:  # layer already stored
                 if layer.type_index is not None:  # type already stored
                     self.cmb_type.setCurrentIndex(layer.type_index)
 
                     if layer.format_index is not None:  # format index already stored
-                        print(layer.format_index)
-                        self.fill_format_combobox()
-                        self.cmb_format.setCurrentIndex(layer.format_index)
+                        self.handle_format()
 
                     else:
                         self.fill_format_combobox()
-                        self.cmb_format.setCurrentIndex(0)
 
                 else:
                     self.cmb_type.setCurrentIndex(0)
@@ -175,14 +174,26 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             if self.cmb_type.currentIndex() > 0:
                 layer.type_index = self.cmb_type.currentIndex()
-                self.fill_format_combobox()
-                layer.format_index = self.cmb_format.currentIndex()
+                self.handle_format()
+
+    def handle_format(self):
+        if len(self.layers.layer_list) > 0:
+            layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+
+            if layer.format_index is not None:  # format already stored
+                layer.format_index_tmp = layer.format_index  # store backup of format index
+
+            self.fill_format_combobox()  # triggers self.store_format and new layer.format_index
+
+            if layer.format_index_tmp is not None:
+                self.cmb_format.setCurrentIndex(layer.format_index_tmp)
 
     def store_format(self):
         if len(self.layers.layer_list) > 0:
             layer = self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
             layer.format_index = self.cmb_format.currentIndex()
+            # print(f"Store format {layer.format_index}")
             # print(layer.format_index)
 
     def fill_data_table(self):
@@ -249,3 +260,4 @@ class Layer:
         self.set_index = None
         self.type_index = None
         self.format_index = None
+        self.format_index_tmp = None  # backup of format index as format_index may be overwritten
