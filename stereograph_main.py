@@ -76,6 +76,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.layers = Layers()
         self.removable_layer = None
         self.formats = None
+        self.format_selection = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
@@ -212,6 +213,8 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.cmb_format.setCurrentIndex(layer.format_index_tmp)  # set format index to previously stored index
             layer.format_index_tmp = None
 
+        self.fill_data_table()
+
     def store_format(self):
         """
         This function is called whenever the index of the format combobox changes.
@@ -227,38 +230,45 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if layer is not None:  # layer already stored
             layer.format_index = self.cmb_format.currentIndex()  # get a new format index
 
+            # hacky workaround because signal can be emitted 3 times with self.formats = None even though it should be filled already
+            if self.formats is not None:
+                self.fill_data_table()
+
     def fill_data_table(self):
-        if self.cmb_set.currentIndex() > 0 and self.cmb_type.currentIndex() > 0:
-            self.formats = self.formats[self.cmb_format.currentIndex()]  # slice list at current index of format combobox
+        layer = self.get_layer_from_combobox()
 
-            # set header of input table
-            self.tbl_input.setHorizontalHeaderLabels(["ID", self.formats[0], self.formats[1]])
+        if layer is not None:  # layer already stored
+            if layer.set_index is not None and layer.type_index is not None and layer.format_index is not None:
+                self.format_selection = self.formats[layer.format_index]  # slice list at current index of format combobox
 
-            self.tbl_input.setRowCount(
-                self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.featureCount()
-            )
+                # set header of input table
+                self.tbl_input.setHorizontalHeaderLabels(["ID", self.format_selection[0], self.format_selection[1]])
 
-            for row in range(self.tbl_input.rowCount()):
-                feature = self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.getFeature(row)
+                self.tbl_input.setRowCount(
+                    self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.featureCount()
+                )
 
-                # set id
-                if feature.attributes()[0]:
-                    fid = feature.attributes()[0]
+                for row in range(self.tbl_input.rowCount()):
+                    feature = self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.getFeature(row)
 
-                else:
-                    fid = feature.id()
+                    # set id
+                    if feature.attributes()[0]:
+                        fid = feature.attributes()[0]
 
-                col_0 = QtWidgets.QTableWidgetItem()
-                col_1 = QtWidgets.QTableWidgetItem()
-                col_2 = QtWidgets.QTableWidgetItem()
+                    else:
+                        fid = feature.id()
 
-                col_0.setData(Qt.EditRole, fid)
-                #col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_0])
-                #col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
+                    col_0 = QtWidgets.QTableWidgetItem()
+                    col_1 = QtWidgets.QTableWidgetItem()
+                    col_2 = QtWidgets.QTableWidgetItem()
 
-                self.tbl_input.setItem(row, 0, col_0)
-                #self.tbl_input.setItem(row, 1, col_1)
-                #self.tbl_input.setItem(row, 2, col_2)
+                    col_0.setData(Qt.EditRole, fid)
+                    #col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[layer.set_index].index_field_0])
+                    #col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
+
+                    self.tbl_input.setItem(row, 0, col_0)
+                    #self.tbl_input.setItem(row, 1, col_1)
+                    #self.tbl_input.setItem(row, 2, col_2)
 
         else:  # index of dataset combobox is 0, get back to default setup
             self.cmb_type.setCurrentIndex(0)
