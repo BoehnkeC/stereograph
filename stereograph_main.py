@@ -77,6 +77,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.removable_layer = None
         self.formats = None
         self.format_selection = None
+        self.fields = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
@@ -95,11 +96,13 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.survey_layers()  # get layers loaded in QGIS
         self.init_dataset_combobox()  # insert layers in dataset combobox
-        self.init_types_and_formats()
+        self.init_types_formats_and_fields()
 
         self.cmb_set.currentIndexChanged.connect(self.store_layer)
         self.cmb_type.currentIndexChanged.connect(self.store_type)
         self.cmb_format.currentIndexChanged.connect(self.store_format)
+        self.cmb_field0.currentIndexChanged.connect(self.store_fields)
+        self.cmb_field1.currentIndexChanged.connect(self.store_fields)
 
     def survey_layers(self):
         for layer in QgsProject.instance().mapLayers().items():
@@ -114,7 +117,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.cmb_set.addItem("Deselect")
             self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
-    def init_types_and_formats(self):
+    def init_types_formats_and_fields(self):
         """
         Get all entries back to default.
         Clear data table.
@@ -122,11 +125,26 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.cmb_type.clear()
         self.cmb_type.addItems([_type.value for _type in Types])
-
         self.init_format_combobox()  # nothing selected yet, fill formats with dummy entry
+
+        self.init_fields_comboboxes()
 
         self.tbl_input.setRowCount(0)
         self.tbl_input.setHorizontalHeaderLabels(["", "", ""])
+
+    def init_fields_comboboxes(self, layer=None):
+        self.cmb_field0.clear()
+        self.cmb_field1.clear()
+
+        if layer:
+            self.fields = [field.name() for field in layer.layer.fields()]
+            self.cmb_field0.addItems(self.fields)
+            self.cmb_field1.addItems(self.fields)
+
+        if None not in layer.fields_indices:  # fields already stored
+            print(layer.fields_indices)
+            self.cmb_field0.setCurrentIndex(layer.fields_indices[0])
+            self.cmb_field1.setCurrentIndex(layer.fields_indices[1])
 
     def init_format_combobox(self):
         """
@@ -135,6 +153,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
 
         self.cmb_format.clear()
+        self.init_fields_comboboxes()
 
         if self.cmb_type.currentIndex() == TypesIndices.dummy:
             self.cmb_format.addItem("Please select dataset type.")
@@ -165,9 +184,10 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if layer is not None:  # active layer selection
             if layer.set_index is None:  # layer not stored yet
                 layer.set_index = self.cmb_set.currentIndex()
-                self.init_types_and_formats()
+                self.init_types_formats_and_fields()
                 layer.type_index = None
                 layer.format_index = None
+                layer.fields_indices = [None, None]
 
             else:  # layer already stored
                 if layer.type_index is not None:  # type already stored
@@ -176,6 +196,9 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                     if layer.format_index is not None:  # format index already stored
                         self.handle_format(layer)
 
+                        # if layer.field0_index is not None and layer.field1_index is not None:
+                        #     self.fill_data_table()
+
                     else:
                         self.init_format_combobox()  # format not stored yet
 
@@ -183,7 +206,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                     self.cmb_type.setCurrentIndex(0)  # type not stored yet
 
         else:  # index of dataset combobox is 0, get back to default setup
-            self.init_types_and_formats()
+            self.init_types_formats_and_fields()
 
     def store_type(self):
         layer = self.get_layer_from_combobox()  # get vector layer
@@ -204,6 +227,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         If the format has not been stored previosly, the new index will not be overwritten.
         """
 
+        # format handling
         if layer.format_index is not None:  # format already stored
             layer.format_index_tmp = copy.deepcopy(layer.format_index)  # store backup of format index
 
@@ -212,6 +236,19 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if layer.format_index_tmp is not None:  # format previosly stored
             self.cmb_format.setCurrentIndex(layer.format_index_tmp)  # set format index to previously stored index
             layer.format_index_tmp = None
+
+        # fields handling
+        if None not in layer.fields_indices:  # fields indices already stored
+            layer.fields_indices_tmp = copy.deepcopy(layer.fields_indices)  # store backup of format index
+
+        self.init_fields_comboboxes(layer)
+
+        # print(layer.fields_indices_tmp)
+
+        if None not in layer.fields_indices_tmp:  # fields indices previosly stored
+            self.cmb_field0.setCurrentIndex(layer.fields_indices_tmp[0])  # set field index to previously stored index
+            self.cmb_field1.setCurrentIndex(layer.fields_indices_tmp[1])  # set field index to previously stored index
+            layer.fields_indices_tmp = [None, None]
 
         self.fill_data_table()
 
@@ -232,17 +269,29 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             # hacky workaround because signal can be emitted 3 times with self.formats = None even though it should be filled already
             if self.formats is not None:
+                self.init_fields_comboboxes(layer)
+                self.fill_data_table()
+
+    def store_fields(self):
+        layer = self.get_layer_from_combobox()
+
+        if layer is not None:  # layer already stored
+            layer.fields_indices[0] = self.cmb_field0.currentIndex()  # get a new field index
+            layer.fields_indices[1] = self.cmb_field1.currentIndex()  # get a new field index
+
+            # hacky workaround because signal can be emitted 3 times with self.formats = None even though it should be filled already
+            if self.fields is not None:
                 self.fill_data_table()
 
     def fill_data_table(self):
         layer = self.get_layer_from_combobox()
 
         if layer is not None:  # layer already stored
-            if layer.set_index is not None and layer.type_index is not None and layer.format_index is not None:
+            if layer.set_index is not None and layer.type_index is not None and layer.format_index is not None and None not in layer.fields_indices:
                 self.format_selection = self.formats[layer.format_index]  # slice list at current index of format combobox
 
                 # set header of input table
-                self.tbl_input.setHorizontalHeaderLabels(["ID", self.format_selection[0], self.format_selection[1]])
+                self.tbl_input.setHorizontalHeaderLabels(["ID", self.fields[layer.fields_indices[0]], self.fields[layer.fields_indices[1]]])
 
                 self.tbl_input.setRowCount(
                     self.layers.layer_list[self.cmb_set.currentIndex()-1].layer.featureCount()
@@ -263,12 +312,12 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                     col_2 = QtWidgets.QTableWidgetItem()
 
                     col_0.setData(Qt.EditRole, fid)
-                    #col_1.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[layer.set_index].index_field_0])
-                    #col_2.setData(Qt.EditRole, feature.attributes()[self.layers.layer_list[index].index_field_1])
+                    col_1.setData(Qt.EditRole, feature.attributes()[layer.fields_indices[0]])
+                    col_2.setData(Qt.EditRole, feature.attributes()[layer.fields_indices[1]])
 
                     self.tbl_input.setItem(row, 0, col_0)
-                    #self.tbl_input.setItem(row, 1, col_1)
-                    #self.tbl_input.setItem(row, 2, col_2)
+                    self.tbl_input.setItem(row, 1, col_1)
+                    self.tbl_input.setItem(row, 2, col_2)
 
         else:  # index of dataset combobox is 0, get back to default setup
             self.cmb_type.setCurrentIndex(0)
@@ -299,3 +348,5 @@ class Layer:
         self.type_index = None
         self.format_index = None
         self.format_index_tmp = None  # backup of format index as format_index may be overwritten
+        self.fields_indices = [None, None]
+        self.fields_indices_tmp = [None, None]
