@@ -41,6 +41,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 
 from copy import deepcopy
 
+from .options import *
 from .stereograph_input import StereoGraphInputWidget
 
 # from stereograph_plot_settings import StereoGraphPltSettingsWidget
@@ -99,10 +100,11 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # self.init_types_formats_and_fields()
 
         self.cmb_set.currentIndexChanged.connect(self.store_layer)
+        self.cmb_set.currentIndexChanged.connect(self.init_types_formats_comboboxes)
         # self.cmb_type.currentIndexChanged.connect(self.store_type)
         # self.cmb_format.currentIndexChanged.connect(self.store_format)
-        self.cmb_field0.currentIndexChanged.connect(self.store_fields)
-        self.cmb_field1.currentIndexChanged.connect(self.store_fields)
+        self.cmb_field0.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field0))
+        self.cmb_field1.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field1))
 
     def survey_layers(self):
         """
@@ -124,6 +126,16 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.cmb_set.addItem("Deselect")
             self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
+    def init_types_formats_comboboxes(self):
+        self.cmb_type.clear()
+        self.cmb_format.clear()
+
+        types = list(Types.__dict__["_member_map_"].keys())  # _member_map: OrderedDict([('dummy', <Types.dummy: '--No type--'>), etc.
+        types_values = [Types.__dict__[_type].value for _type in types]  # get a list of class object values of class Types
+
+        self.cmb_type.addItems(types_values)
+        self.cmb_format.addItem("Please select type")
+
     def init_fields_comboboxes(self, layer=None):
         self.cmb_field0.clear()
         self.cmb_field1.clear()
@@ -143,6 +155,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         layer = self.get_layer_from_combobox()  # get layer from dataset combobox
 
         if layer is not None:  # active layer selection
+            print("Layer is not None")
             self.init_fields_comboboxes(layer)
 
             if layer.set_index is None:  # layer not stored yet
@@ -162,18 +175,23 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             #self.init_fields_comboboxes()
             pass
 
-    def store_fields(self):
+    def store_fields(self, item=None):
         layer = self.get_layer_from_combobox()
 
         if layer is not None:  # layer already stored
             print(layer.fields_indices)
             if None not in layer.fields_indices:  # fields already stored
-                print("here")
-                self.cmb_field0.setCurrentIndex(layer.fields_indices[0])
-                self.cmb_field1.setCurrentIndex(layer.fields_indices[1])
+                if item.objectName == "cmb_field0":
+                    self.cmb_field0.setCurrentIndex(layer.fields_indices[0])
 
-            layer.fields_indices[0] = self.cmb_field0.currentIndex()  # get a new field index
-            layer.fields_indices[1] = self.cmb_field1.currentIndex()  # get a new field index
+                elif item.objectName == "cmb_field1":
+                    self.cmb_field1.setCurrentIndex(layer.fields_indices[1])
+
+            if item.objectName == "cmb_field0":
+                layer.fields_indices[0] = self.cmb_field0.currentIndex()  # get a new field index
+
+            elif item.objectName == "cmb_field1":
+                layer.fields_indices[1] = self.cmb_field1.currentIndex()  # get a new field index
 
 
 class Layers:
