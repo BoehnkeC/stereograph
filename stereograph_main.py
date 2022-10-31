@@ -32,7 +32,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from qgis.PyQt.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt
 from qgis.core import QgsProject, QgsMapLayerType, QgsFeatureRequest
-from .options import Types, TypesIndices, FormatsShort, FormatsLong
+from .options import Types, TypesIndices, FormatsShort, Formats, Lines, Planes
 
 # import matplotlibs backend for plotting in PyQT5
 # see https://www.geeksforgeeks.org/how-to-embed-matplotlib-graph-in-pyqt5/
@@ -73,38 +73,39 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        #self.stereonet = StereoNet()
+        # self.stereonet = StereoNet()
         self.layers = Layers()
         self.removable_layer = None
-        self.formats = None
+        self.types_values = None
+        self.formats_values = None
         self.format_selection = None
         self.fields = None
 
         # this is the Canvas Widget that
         # displays the 'figure'it takes the
         # 'figure' instance as a parameter to __init__
-        #self.canvas = FigureCanvas(self.stereonet.fig)
+        # self.canvas = FigureCanvas(self.stereonet.fig)
 
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
-        #self.toolbar = NavigationToolbar(self.canvas, self)
+        # self.toolbar = NavigationToolbar(self.canvas, self)
 
         # adding tool bar to the layout
-        #self.plot_layout.addWidget(self.toolbar)
+        # self.plot_layout.addWidget(self.toolbar)
 
         # adding canvas to the layout
-        #self.plot_layout.addWidget(self.canvas)
+        # self.plot_layout.addWidget(self.canvas)
 
         self.survey_layers()  # get layers loaded in QGIS
         self.init_dataset_combobox()  # insert layers in dataset combobox
         # self.init_types_formats_and_fields()
 
         self.cmb_set.currentIndexChanged.connect(self.store_layer)
-        self.cmb_set.currentIndexChanged.connect(self.init_types_formats_comboboxes)
-        # self.cmb_type.currentIndexChanged.connect(self.store_type)
-        # self.cmb_format.currentIndexChanged.connect(self.store_format)
-        self.cmb_field0.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field0))
-        self.cmb_field1.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field1))
+        # self.cmb_set.currentIndexChanged.connect(self.init_types_combobox)
+        self.cmb_type.currentIndexChanged.connect(self.store_type)
+        self.cmb_format.currentIndexChanged.connect(self.store_format)
+        # self.cmb_field0.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field0))
+        # self.cmb_field1.currentIndexChanged.connect(lambda: self.store_fields(item=self.cmb_field1))
 
     def survey_layers(self):
         """
@@ -116,8 +117,7 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 self.layers.add_layer(Layer(layer[1]))
 
     def get_layer_from_combobox(self):
-        if self.cmb_set.currentIndex() > 0:
-            return self.layers.layer_list[self.cmb_set.currentIndex() - 1]
+        return self.layers.layer_list[self.cmb_set.currentIndex() - 1]
 
     def init_dataset_combobox(self):
         self.cmb_set.clear()  # does not trigger self.store_layer
@@ -126,24 +126,58 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.cmb_set.addItem("Deselect")
             self.cmb_set.addItems([layer.name for layer in self.layers.layer_list])
 
-    def init_types_formats_comboboxes(self):
+    def init_types_combobox(self, layer=None):
         self.cmb_type.clear()
+        # self.cmb_format.clear()
+
+        types = list(Types.__dict__[
+                         "_member_map_"].keys())  # _member_map: OrderedDict([('dummy', <Types.dummy: '--No type--'>), etc.
+        self.types_values = [Types.__dict__[_type].value for _type in
+                             types]  # get a list of class object values of class Types
+
+        self.cmb_type.addItems(self.types_values)
+        # self.cmb_format.addItem("Please select type")
+
+        if layer:  # layer already stored
+            if layer.type_index:  # type already stored
+                self.cmb_type.setCurrentIndex(layer.type_index)
+
+    def init_format_combobox(self, layer=None):
+        # Add an initial entry saying that type has to be selected first
+        # if type selected, fill combobox based on type
         self.cmb_format.clear()
 
-        types = list(Types.__dict__["_member_map_"].keys())  # _member_map: OrderedDict([('dummy', <Types.dummy: '--No type--'>), etc.
-        types_values = [Types.__dict__[_type].value for _type in types]  # get a list of class object values of class Types
+        if not layer:
+            self.cmb_format.addItem("--Select type--")
 
-        self.cmb_type.addItems(types_values)
-        self.cmb_format.addItem("Please select type")
+        if layer:  # layer already stored
+            if not layer.type_index:  # no type selected yet
+                self.cmb_format.addItem("--Select type--")
 
-    def init_fields_comboboxes(self, layer=None):
-        self.cmb_field0.clear()
-        self.cmb_field1.clear()
+            if layer.type_index:  # type already stored
+                if self.types_values[layer.type_index] == "Lines":
+                    formats = list(Lines.__dict__[
+                                       "_member_map_"].keys())  # _member_map: OrderedDict([('dummy', <Lines.dummy: '--No format--'>), etc.
+                    self.formats_values = [Lines.__dict__[_format].value for _format in
+                                           formats]  # get a list of class object values of class Types
+                    self.cmb_format.addItems(self.formats_values)
 
-        if layer:
-            self.fields = [field.name() for field in layer.layer.fields()]
-            self.cmb_field0.addItems(self.fields)  # triggers self.store_fields
-            self.cmb_field1.addItems(self.fields)  # triggers self.store_fields
+                elif self.types_values[layer.type_index] == "Planes":
+                    formats = list(Planes.__dict__[
+                                       "_member_map_"].keys())  # _member_map: OrderedDict([('dummy', <Planes.dummy: '--No format--'>), etc.
+                    self.formats_values = [Planes.__dict__[_format].value for _format in
+                                           formats]  # get a list of class object values of class Types
+                    self.cmb_format.addItems(self.formats_values)
+
+                    # TODO: Planes index shifts when restoring the layer and shows values that have not been selected
+
+                if layer.format_index:
+                    self.cmb_format.setCurrentIndex(layer.type_index)
+
+    @staticmethod
+    def default_combobox(combobox=None, desc=None):
+        combobox.clear()
+        combobox.addItem(desc)
 
     def store_layer(self):
         """
@@ -152,46 +186,46 @@ class StereographDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         If selected before, reload the selection data from the Layer class.
         """
 
-        layer = self.get_layer_from_combobox()  # get layer from dataset combobox
+        if self.cmb_set.currentIndex() > 0:  # active layer selection
+            layer = self.get_layer_from_combobox()  # get layer from dataset combobox
+            # self.init_fields_comboboxes(layer)
 
-        if layer is not None:  # active layer selection
-            print("Layer is not None")
-            self.init_fields_comboboxes(layer)
+            if layer.dataset_index is None:  # layer not stored yet
+                print("Layer is None")
+                layer.dataset_index = self.cmb_set.currentIndex()  # store combobox index
+                layer.type_index = None  # all other indixes must be None
+                layer.format_index = None  # all other indixes must be None
+                layer.fields_indices = [None, None]  # all other indixes must be None
 
-            if layer.set_index is None:  # layer not stored yet
-                layer.set_index = self.cmb_set.currentIndex()
-                layer.type_index = None
-                layer.format_index = None
-                layer.fields_indices = [None, None]
+                self.init_types_combobox()
+                self.init_format_combobox()
 
-            else:  # layer already stored
-                #print(layer.fields_indices)
-                self.cmb_field0.setCurrentIndex(
-                    layer.fields_indices[0])  # set field index to previously stored index
-                self.cmb_field1.setCurrentIndex(
-                    layer.fields_indices[1])  # set field index to previously stored index
+            else:  # layer already stored, no further action needed for dataset
+                print(layer.name)
+
+                self.init_types_combobox(layer=layer)
+                self.init_format_combobox(layer=layer)
 
         else:  # index of dataset combobox is 0, get back to default setup
-            #self.init_fields_comboboxes()
+            print("Deselect")
+            self.default_combobox(combobox=self.cmb_type, desc="Please select dataset.")
+            # self.init_fields_comboboxes()
             pass
 
-    def store_fields(self, item=None):
-        layer = self.get_layer_from_combobox()
+    def store_type(self):
+        if self.cmb_type.currentIndex() > 0:
+            layer = self.get_layer_from_combobox()
 
-        if layer is not None:  # layer already stored
-            print(layer.fields_indices)
-            if None not in layer.fields_indices:  # fields already stored
-                if item.objectName == "cmb_field0":
-                    self.cmb_field0.setCurrentIndex(layer.fields_indices[0])
+            if self.cmb_type.currentIndex() != layer.type_index:  # valid and new selection
+                layer.type_index = self.cmb_type.currentIndex()
+                self.init_format_combobox(layer=layer)  # fill format combobox
 
-                elif item.objectName == "cmb_field1":
-                    self.cmb_field1.setCurrentIndex(layer.fields_indices[1])
+    def store_format(self):
+        if self.cmb_format.currentIndex() > 0:
+            layer = self.get_layer_from_combobox()
 
-            if item.objectName == "cmb_field0":
-                layer.fields_indices[0] = self.cmb_field0.currentIndex()  # get a new field index
-
-            elif item.objectName == "cmb_field1":
-                layer.fields_indices[1] = self.cmb_field1.currentIndex()  # get a new field index
+            if self.cmb_format.currentIndex() != layer.format_index:  # valid and new selection
+                layer.format_index = self.cmb_format.currentIndex()
 
 
 class Layers:
@@ -211,7 +245,7 @@ class Layer:
         self.layer_id = layer.id()
         self.layer = layer  # QGIS vlayer
         self.name = layer.name()
-        self.set_index = None
+        self.dataset_index = None
         self.type_index = None
         self.format_index = None
         self.format_index_tmp = None  # backup of format index as format_index may be overwritten

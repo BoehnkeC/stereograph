@@ -29,11 +29,23 @@ class FormatsShort:
         az = "AZ"
 
 
-class FormatsLong:
-    class Lines(Enum):
-        tp = ("Trend", "Plunge")
-        pq = ("Plunge", "Trend Quadrant")
+class Lines(Enum):
+    dummy = "--No type--"
+    pq = "Plunge, Trend Quadrant"
+    ad = "Strike Azimuth, Dip Magnitude"
+    az = "Unspecified, Unspecified"
 
-    class Planes(Enum):
-        ad = ("Strike Azimuth", "Dip Magnitude")
-        az = ("Unspecified", "Unspecified")
+
+class Planes(Enum):
+    dummy = "--No type--"
+    ad = "Strike Azimuth, Dip Magnitude"
+    az = "Unspecified, Unspecified"
+    qd = "Quadrant, Unspecified"
+    dd = "Dip Magnitude, Dip Azimuth"
+
+
+class Formats(Enum):
+    tp = ("Trend", "Plunge")
+    pq = ("Plunge", "Trend Quadrant")
+    ad = ("Strike Azimuth", "Dip Magnitude")
+    az = ("Unspecified", "Unspecified")
